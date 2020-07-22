@@ -12,7 +12,14 @@ import scipy as sp
 from sklearn import preprocessing
 import json
 from Distance_Classifier import Distance_classifier
+from sklearn.metrics import r2_score
 
+def get_raw_p(array):
+    return np.argsort(array)/len(array)
+
+def get_emp_p(array, k, theta):
+    dist = sp.stats.gamma(theta, scale = k)
+    return dist.cdf(array)
 
 data_location_AT = [r"D:\Storage\Research\data\ATER",
                  r"D:\Storage\Research\data\ATERDD",
@@ -104,15 +111,40 @@ for i in range(cats):
             X.append(b)
             y.append(i)
 
-# b = defaultdict(list)
 x = X
 X = normalize(X)
 x_train, x_test, y_train, y_test = train_test_split(X,y)
-# print(type(x_train), type(X[0]))
-# print(list(y_train))
-test_class = Distance_classifier(x_train,list(y_train), model = "gamma")
+
+test_class = Distance_classifier(x_train,list(y_train), model = "gamma", threshold = 1/len(x_train))
 test_class.fit()
-# test_class.get_details()
 
 test_class.mle()
-print(test_class.score())
+
+gamma_alphas = test_class.get_gamma_alphas()
+details = test_class.get_details()
+
+for i in details.keys():
+    details[i] = np.asarray(details[i][i])
+
+actual_p = {}
+distri_p = {}
+for cat, dist in details.items():
+
+    actual_p[cat] = get_raw_p(np.sort(dist))
+    distri_p[cat] = get_emp_p(np.sort(dist), gamma_alphas[cat,1], gamma_alphas[cat,0])
+
+for cat in actual_p.keys():
+    #plot the distributions
+    plt.plot(actual_p[cat], distri_p[cat])
+
+    #Label axis
+    plt.xlabel("Emprical CDF")
+    plt.ylabel("Theoretical CDF")
+
+    #put r^2 of line
+    plt.text(0,1, f"Has a r^2 of {r2_score(actual_p[cat],distri_p[cat])}")
+
+    #plot y = x
+    plt.plot([0,1], [0,1])
+
+    plt.show()

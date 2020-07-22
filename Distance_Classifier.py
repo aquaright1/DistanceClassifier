@@ -127,8 +127,7 @@ class Distance_classifier():
 
             # print(self.distance)
 #             self.mle()
-            # add_secondary()
-
+            add_secondary()
 
     def get_details(self):
         return self.distance
@@ -193,8 +192,8 @@ class Distance_classifier():
                         secondary_pred -= .5
                         # should not be too close for the secondary distribution
 
-                    predictions[cat] = max([secondary_pred, predictions[cat]])
-            """
+                    predictions[cat] = max([secondary_pred, predictions[cat]])"""
+
             if not explicit:
                 prediction = np.argmax(predictions) if predictions[np.argmax(predictions)] >= 1/np.count(self.labels, np.argmax(predictions)) else -1
             return predictions if explicit else prediction
