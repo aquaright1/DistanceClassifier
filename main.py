@@ -21,6 +21,9 @@ def get_emp_p(array, k, theta):
     dist = sp.stats.gamma(theta, scale = k)
     return dist.cdf(array)
 
+LOG = True
+FULL = True
+
 data_location_AT = [r"D:\Storage\Research\data\ATER",
                  r"D:\Storage\Research\data\ATERDD",
                  r"D:\Storage\Research\data\ATGEO",
@@ -115,7 +118,12 @@ x = X
 X = normalize(X)
 x_train, x_test, y_train, y_test = train_test_split(X,y)
 
-test_class = Distance_classifier(x_train,list(y_train), model = "gamma", threshold = 1/len(x_train))
+# for full test just use X and y
+if FULL:
+    test_class = Distance_classifier(x,list(y), model = "gamma", threshold = 1/len(x_train))
+else:
+    test_class = Distance_classifier(x_train, list(y_train))
+
 test_class.fit()
 
 test_class.mle()
@@ -136,6 +144,10 @@ for cat, dist in details.items():
 for cat in actual_p.keys():
     #plot the distributions
     plt.plot(actual_p[cat], distri_p[cat])
+
+    if LOG:
+        plt.yscale('log')
+        plt.xscale('log')
 
     #Label axis
     plt.xlabel("Emprical CDF")
