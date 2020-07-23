@@ -23,6 +23,7 @@ def get_emp_p(array, k, theta):
 
 LOG = True
 FULL = True
+ORGANISM = "AT"
 
 data_location_AT = [r"D:\Storage\Research\data\ATER",
                  r"D:\Storage\Research\data\ATERDD",
@@ -142,6 +143,9 @@ for cat, dist in details.items():
     distri_p[cat] = get_emp_p(np.sort(dist), gamma_alphas[cat,1], gamma_alphas[cat,0])
 
 for cat in actual_p.keys():
+    for cdf in ["actual", "theory"]:
+        np.savetxt(f"{ORGANISM}_{cat}_{cdf}.txt", actual_p[cat] if cdf == "actual" else distri_p[cat])
+
     #plot the distributions
     plt.plot(actual_p[cat], distri_p[cat])
 
