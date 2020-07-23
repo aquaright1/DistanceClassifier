@@ -24,6 +24,17 @@ def get_emp_p(array, k, theta):
 LOG = True
 FULL = True
 ORGANISM = "AT"
+NUM_TO_NAME = {
+    0: "ER",
+    1: "ERDD",
+    2: "GEO",
+    3: "GEOGD",
+    4: "HGG",
+    5: "SF",
+    6: "SFDD",
+    7: "Sticky"
+}
+
 
 data_location_AT = [r"D:\Storage\Research\data\ATER",
                  r"D:\Storage\Research\data\ATERDD",
@@ -107,60 +118,66 @@ data_location_SP = [r"D:\Storage\Research\data\SPER",
 
 num = 8
 cats = num if num <= 8 else 8
-X = []
-y = []
-for i in range(cats):
-        x = pd.read_csv(data_location_AT[i], header = None, sep = ' ').iloc[:,:].values
-        for b in x:
-            X.append(b)
-            y.append(i)
 
-x = X
-X = normalize(X)
-x_train, x_test, y_train, y_test = train_test_split(X,y)
+for b in ["AT", "CE", "DM", "HS", "RN", "SC", "SP"]:
+    ORGANISM = b
 
-# for full test just use X and y
-if FULL:
-    test_class = Distance_classifier(x,list(y), model = "gamma", threshold = 1/len(x_train))
-else:
-    test_class = Distance_classifier(x_train, list(y_train))
+    X = []
+    y = []
+    for i in range(cats):
+            x = pd.read_csv(data_location_CE[i], header = None, sep = ' ').iloc[:,:].values
+            for b in x:
+                X.append(b)
+                y.append(i)
 
-test_class.fit()
+    x = X
+    X = normalize(X)
+    x_train, x_test, y_train, y_test = train_test_split(X,y)
 
-test_class.mle()
+    # for full test just use X and y
+    if FULL:
+        test_class = Distance_classifier(x,list(y), model = "gamma", threshold = 1/len(x_train))
+    else:
+        test_class = Distance_classifier(x_train, list(y_train))
 
-gamma_alphas = test_class.get_gamma_alphas()
-details = test_class.get_details()
+    test_class.fit()
 
-for i in details.keys():
-    details[i] = np.asarray(details[i][i])
+    test_class.mle()
 
-actual_p = {}
-distri_p = {}
-for cat, dist in details.items():
+    gamma_alphas = test_class.get_gamma_alphas()
+    details = test_class.get_details()
 
-    actual_p[cat] = get_raw_p(np.sort(dist))
-    distri_p[cat] = get_emp_p(np.sort(dist), gamma_alphas[cat,1], gamma_alphas[cat,0])
+    for i in details.keys():
+        details[i] = np.asarray(details[i][i])
 
-for cat in actual_p.keys():
-    for cdf in ["actual", "theory"]:
-        np.savetxt(f"{ORGANISM}_{cat}_{cdf}.txt", actual_p[cat] if cdf == "actual" else distri_p[cat])
+    actual_p = {}
+    distri_p = {}
+    for cat, dist in details.items():
 
-    #plot the distributions
-    plt.plot(actual_p[cat], distri_p[cat])
+        actual_p[cat] = get_raw_p(np.sort(dist))
+        distri_p[cat] = get_emp_p(np.sort(dist), gamma_alphas[cat,1], gamma_alphas[cat,0])
 
-    if LOG:
-        plt.yscale('log')
-        plt.xscale('log')
+    for cat in actual_p.keys():
+        for cdf in ["actual", "theory"]:
+            np.savetxt(f"{ORGANISM}_{NUM_TO_NAME[cat]}_{cdf}.txt", actual_p[cat] if cdf == "actual" else distri_p[cat])
 
-    #Label axis
-    plt.xlabel("Emprical CDF")
-    plt.ylabel("Theoretical CDF")
+        #plot the distributions
+        plt.plot(actual_p[cat], distri_p[cat])
 
-    #put r^2 of line
-    plt.text(0,1, f"Has a r^2 of {r2_score(actual_p[cat],distri_p[cat])}")
+        if LOG:
+            plt.yscale('log')
+            plt.xscale('log')
 
-    #plot y = x
-    plt.plot([0,1], [0,1])
+        #Label axis
+        plt.xlabel("Emprical CDF")
+        plt.ylabel("Theoretical CDF")
 
-    plt.show()
+        #put r^2 of line
+        plt.text(0,1, f"Has a r^2 of {r2_score(actual_p[cat],distri_p[cat])}")
+
+        #plot y = x
+        plt.plot([0,1], [0,1])
+
+        plt.savefig(f"{ORGANISM}_log_{NUM_TO_NAME[cat]}.png")
+
+        plt.clf()
