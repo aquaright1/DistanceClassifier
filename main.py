@@ -119,65 +119,64 @@ data_location_SP = [r"D:\Storage\Research\data\SPER",
 num = 8
 cats = num if num <= 8 else 8
 
-for b in ["AT", "CE", "DM", "HS", "RN", "SC", "SP"]:
-    ORGANISM = b
+ORGANISM = "disregard"
 
-    X = []
-    y = []
-    for i in range(cats):
-            x = pd.read_csv(data_location_CE[i], header = None, sep = ' ').iloc[:,:].values
-            for b in x:
-                X.append(b)
-                y.append(i)
+X = []
+y = []
+for i in range(cats):
+        x = pd.read_csv(data_location_CE[i], header = None, sep = ' ').iloc[:,:].values
+        for b in x:
+            X.append(b)
+            y.append(i)
+x = X
 
-    x = X
-    X = normalize(X)
-    x_train, x_test, y_train, y_test = train_test_split(X,y)
-
+X = normalize(X)
+x_train, x_test, y_train, y_test = train_test_split(X,y)
     # for full test just use X and y
-    if FULL:
-        test_class = Distance_classifier(x,list(y), model = "gamma", threshold = 1/len(x_train))
-    else:
-        test_class = Distance_classifier(x_train, list(y_train))
+if FULL:
+    test_class = Distance_classifier(x,list(y), model = "gamma", threshold = 1/len(x_train))
+else:
+    test_class = Distance_classifier(x_train, list(y_train))
 
-    test_class.fit()
+test_class.fit()
 
-    test_class.mle()
+test_class.mle()
 
-    gamma_alphas = test_class.get_gamma_alphas()
-    details = test_class.get_details()
+gamma_alphas = test_class.get_gamma_alphas()
+details = test_class.get_details()
 
-    for i in details.keys():
-        details[i] = np.asarray(details[i][i])
+for i in details.keys():
+    details[i] = np.asarray(details[i][i])
 
-    actual_p = {}
-    distri_p = {}
-    for cat, dist in details.items():
+actual_p = {}
+distri_p = {}
 
-        actual_p[cat] = get_raw_p(np.sort(dist))
-        distri_p[cat] = get_emp_p(np.sort(dist), gamma_alphas[cat,1], gamma_alphas[cat,0])
+for cat, dist in details.items():
 
-    for cat in actual_p.keys():
-        for cdf in ["actual", "theory"]:
-            np.savetxt(f"{ORGANISM}_{NUM_TO_NAME[cat]}_{cdf}.txt", actual_p[cat] if cdf == "actual" else distri_p[cat])
+    actual_p[cat] = get_raw_p(np.sort(dist))
+    distri_p[cat] = get_emp_p(np.sort(dist), gamma_alphas[cat,1], gamma_alphas[cat,0])
+
+for cat in actual_p.keys():
+    for cdf in ["actual", "theory"]:
+        np.savetxt(f"{ORGANISM}_{NUM_TO_NAME[cat]}_{cdf}.txt", actual_p[cat] if cdf == "actual" else distri_p[cat])
 
         #plot the distributions
-        plt.plot(actual_p[cat], distri_p[cat])
+    plt.plot(actual_p[cat], distri_p[cat])
 
-        if LOG:
-            plt.yscale('log')
-            plt.xscale('log')
+    if LOG:
+        plt.yscale('log')
+        plt.xscale('log')
 
-        #Label axis
-        plt.xlabel("Emprical CDF")
-        plt.ylabel("Theoretical CDF")
+    #Label axis
+    plt.xlabel("Emprical CDF")
+    plt.ylabel("Theoretical CDF")
 
-        #put r^2 of line
-        plt.text(0,1, f"Has a r^2 of {r2_score(actual_p[cat],distri_p[cat])}")
+    #put r^2 of line
+    plt.text(0,1, f"Has a r^2 of {r2_score(actual_p[cat],distri_p[cat])}")
 
-        #plot y = x
-        plt.plot([0,1], [0,1])
+    #plot y = x
+    plt.plot([0,1], [0,1])
 
-        plt.savefig(f"{ORGANISM}_log_{NUM_TO_NAME[cat]}.png")
+    plt.savefig(f"{ORGANISM}_log_{NUM_TO_NAME[cat]}.png")
 
-        plt.clf()
+    plt.clf()

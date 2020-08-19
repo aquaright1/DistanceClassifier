@@ -30,11 +30,15 @@ class Distance_classifier():
         pass
 
     def __init__(self, X, y, model = "gamma", threshold = .00, kd_tree = False):
+        if(len(X) != len(y)):
+            print("X and y are not the same dimentions")
+            raise NameError
         self.kd = kd_tree
         self.data = np.asarray(X)
         self.labels = np.asarray(y)
         self.model = model
         self.threshold = threshold
+        self.count = 0
 
         #order the data to fit with processing
         proper_order = np.unravel_index(np.argsort(self.labels, axis=None), self.labels.shape)
@@ -66,7 +70,7 @@ class Distance_classifier():
             IQR = (upper_quartile - lower_quartile) * outlier_constant
             outliers = dataset[dataset >= upper_quartile + IQR]
             non_outliers = dataset[dataset < upper_quartile + IQR]
-            print(outliers)
+            #print(outliers)
             return outliers, non_outliers
 
         def add_secondary():
@@ -85,7 +89,7 @@ class Distance_classifier():
 
         if not X == None == y:
             if len(X) != len(y):
-                print("X and y do not have the same length")
+                #print("X and y do not have the same length")
                 raise NameError
             self.data = X
             self.labels = y
@@ -100,7 +104,7 @@ class Distance_classifier():
             self.trees = {}
             #create the KD tree for each class
             for label in set(self.labels):
-                #print(self.labels == label)
+                ##print(self.labels == label)
                 self.trees[label] = KDTree(self.data[self.labels == label])
 
             '''
@@ -125,7 +129,7 @@ class Distance_classifier():
                 for key, shortest in shortests.items():
                     self.distance[self.labels[i]][key].append(shortest)
 
-            # print(self.distance)
+            # #print(self.distance)
 #             self.mle()
             add_secondary()
 
@@ -142,8 +146,8 @@ class Distance_classifier():
             alphas = np.zeros((len(set(self.labels)), 2)) # 0 is k, 1 is theta
             x = np.zeros((len(set(self.labels)), 2)) #0 is np.log(np.mean(x)) 1 is np.mean(np.log(x))
             for cat in set(self.labels):
-#                 print("Catigory:",self.distance[cat][cat])
-                #print(x, self.distance)
+#                 #print("Catigory:",self.distance[cat][cat])
+                ##print(x, self.distance)
                 x[cat][0] = np.log(np.mean(self.distance[cat][cat]))
                 x[cat][1] = np.mean(np.log(self.distance[cat][cat]))
 
@@ -154,7 +158,7 @@ class Distance_classifier():
                 digamma = sp.special.digamma(k)
                 digamma_prime = sp.special.polygamma(1, k)
                 k = 1/ (1/k + (x[:,1] - x[:,0] + np.log(k) - digamma)/(k**2*(1/k - digamma_prime)))
-                #print("itermidiary step:", k)
+                ##print("itermidiary step:", k)
 
             alphas[:, 0] = k
             alphas[:, 1] = np.exp(x[:, 0])/alphas[:, 0]
@@ -164,7 +168,7 @@ class Distance_classifier():
             self.model = "gamma"
 
             self.gamma_alphas = gamma_approx()
-            print("made the alphas")
+            #print("made the alphas")
 
         else:
             print("Model is not supported")
@@ -173,9 +177,13 @@ class Distance_classifier():
         if model == "gamma" or (model == "" and self.model == "gamma"):
 
             min_dists = self.distances(data)
+            if self.count < 5:
+                # print(f"min dists is {min_dists}")
+                self.count += 1
             theta = self.gamma_alphas[:,0]
             k = self.gamma_alphas[:,1]
             predictions = np.zeros((self.gamma_alphas.shape[0],1))
+            # print(f"The gamma alpahs are {self.gamma_alphas} and the min distances are {min_dists}")
 
             # create the models
             models = [sp.stats.gamma(theta[a], scale = k[a]) for a in min_dists.keys()]
@@ -195,7 +203,7 @@ class Distance_classifier():
                     predictions[cat] = max([secondary_pred, predictions[cat]])"""
 
             if not explicit:
-                prediction = np.argmax(predictions) if predictions[np.argmax(predictions)] >= 1/np.count(self.labels, np.argmax(predictions)) else -1
+                prediction = np.argmax(predictions) if predictions[np.argmax(predictions)] > self.threshold else -1
             return predictions if explicit else prediction
 
     def score(self, model = "", explicit = False):
@@ -205,19 +213,20 @@ class Distance_classifier():
             if self.model == "gamma":
                 total = 0
                 correct = 0
-                pred_6 = 0
+                # pred_6 = 0
                 for i in range(len(self.data)):
                     predictions = self.predict(self.data[i])
                     if explicit:
                         all_data.append(predictions)
                     else:
-                        predict = np.argmax(predictions) if predictions[np.argmax(predictions)] >= self.threshold else -1
-                        # print(f"predicted {predict}, should have been {self.labels[i]} because {predictions}")
+                        predict = np.argmax(predictions) if predictions[np.argmax(predictions)] > self.threshold else -1
+                        # #print(f"predicted {predict}, should have been {self.labels[i]} because {predictions}")
                         if predict == self.labels[i]:
                             correct += 1
                         else:
-                            print(f"distances are {self.distances(self.data[i])}\npredicted class of {predict} when actual was {self.labels[i]}")
-                            print(f"the predictions were {predictions}")
+                            pass
+                            # #print(f"distances are {self.distances(self.data[i])}\npredicted class of {predict} when actual was {self.labels[i]}")
+                            # #print(f"the predictions were {predictions}")
                         total += 1
-                print(f"the gammas alphas were {self.gamma_alphas}")
+                # #print(f"the gammas alphas were {self.gamma_alphas}")
                 return all_data if explicit else correct/total
