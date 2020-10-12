@@ -26,10 +26,7 @@ def customScaling(distances, scale = (1/3)):
 
 class Distance_classifier():
 
-    def __init__(self, model = "auto"):
-        pass
-
-    def __init__(self, X, y, model = "gamma", threshold = .00, kd_tree = False):
+    def __init__(self, X = None, y = None, model = "gamma", threshold = .00, kd_tree = False):
         if(len(X) != len(y)):
             print("X and y are not the same dimentions")
             raise NameError
@@ -62,6 +59,8 @@ class Distance_classifier():
         return short_dist
 
     def fit(self, X = None, y = None):
+        if not isinstance(self.data, np.ndarray) and X == None or (not isinstance(self.labels, np.ndarray) and y == None):
+            raise ValueError
 
         def find_outliers(dataset, outlier_constant = 1.5):
             #defintion of outlier w/ 1.5 iqr definition
@@ -87,18 +86,20 @@ class Distance_classifier():
                     # second [lowest_new_class] to make sure other code works
 #                     lowest_new_class += 1 # be able to make a new class
 
-        if len(X) != len(y):
-                #print("X and y do not have the same length")
-            raise NameError
-        self.data = X
-        self.labels = y
-
+        if X != None and y != None and len(X) == len(y):
+            if len(X) != len(y):
+                    #print("X and y do not have the same length")
+                raise NameError
+            else:
+                self.data = X
+                self.labels = y
 
         # store all the distances in format Actual Class: To Class: [closest distances]
         self.distance = defaultdict(lambda: defaultdict(list))
 
 
         ### KD tree impementation of distance
+        ### not yet functional
         if self.kd:
             self.trees = {}
             #create the KD tree for each class
@@ -135,7 +136,8 @@ class Distance_classifier():
     def get_details(self):
         return self.distance
 
-    def get_gamma_alphas(self):
+    def get_params(self):
+        # returns the gamma alphas
         return self.gamma_alphas
 
     def __mle__(self, model = "", iterations = 5):
@@ -205,7 +207,7 @@ class Distance_classifier():
                 prediction = np.argmax(predictions) if predictions[np.argmax(predictions)] > self.threshold else -1
             return predictions if explicit else prediction
 
-    def score(self, model = "", explicit = False):
+    def score(self, X = None, y = None, model = "", explicit = False):
         if explicit:
             all_data = []
         if model == "":
@@ -213,23 +215,44 @@ class Distance_classifier():
                 total = 0
                 correct = 0
                 # pred_6 = 0
-                for i in range(len(self.data)):
-                    predictions = self.predict(self.data[i])
-                    if explicit:
-                        all_data.append(predictions)
-                    else:
-                        predict = np.argmax(predictions) if predictions[np.argmax(predictions)] > self.threshold else -1
-                        # #print(f"predicted {predict}, should have been {self.labels[i]} because {predictions}")
-                        if predict == self.labels[i]:
-                            correct += 1
+                if not isinstance(X, np.ndarray) and not isinstance(y, np.ndarray):
+                    for i in range(len(self.data)):
+                        predictions = self.predict(self.data[i])
+                        if explicit:
+                            all_data.append(predictions)
                         else:
-                            pass
-                            # #print(f"distances are {self.distances(self.data[i])}\npredicted class of {predict} when actual was {self.labels[i]}")
-                            # #print(f"the predictions were {predictions}")
-                        total += 1
-                # #print(f"the gammas alphas were {self.gamma_alphas}")
-                return all_data if explicit else correct/total
+                            predict = np.argmax(predictions) if predictions[np.argmax(predictions)] > self.threshold else -1
+                            # #print(f"predicted {predict}, should have been {self.labels[i]} because {predictions}")
+                            if predict == self.labels[i]:
+                                correct += 1
+                            else:
+                                pass
+                                # #print(f"distances are {self.distances(self.data[i])}\npredicted class of {predict} when actual was {self.labels[i]}")
+                                # #print(f"the predictions were {predictions}")
+                            total += 1
+                    # #print(f"the gammas alphas were {self.gamma_alphas}")
+                    return all_data if explicit else correct/total
 
+                else:
+                    if len(X) != len(y):
+                        raise NameError
+                    for i in range(len(X)):
+                        predictions = self.predict(X[i])
+                        if explicit:
+                            all_data.append(predictions)
+                        else:
+                            predict = np.argmax(predictions) if predictions[np.argmax(predictions)] > self.threshold else -1
+                            if predict == y[i]:
+                                correct += 1
+                            total += 1
+                    return all_data if explicit else correct/total
+
+
+'''
+Disregard this part, it just trys to streamline process of
+making multiple distance classifiers and staking them
+into a single classifier
+'''
 class distance_stack:
     def __init__(self, models, data_adjustment_funct):
         self.models = models
