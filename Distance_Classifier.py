@@ -61,7 +61,7 @@ class Distance_classifier():
             print("found", zeros, "points with distance of 0")
         return short_dist
 
-    def fit(self, X = None, y = None, test = True):
+    def fit(self, X = None, y = None):
 
         def find_outliers(dataset, outlier_constant = 1.5):
             #defintion of outlier w/ 1.5 iqr definition
@@ -87,12 +87,11 @@ class Distance_classifier():
                     # second [lowest_new_class] to make sure other code works
 #                     lowest_new_class += 1 # be able to make a new class
 
-        if not X == None == y:
-            if len(X) != len(y):
+        if len(X) != len(y):
                 #print("X and y do not have the same length")
-                raise NameError
-            self.data = X
-            self.labels = y
+            raise NameError
+        self.data = X
+        self.labels = y
 
 
         # store all the distances in format Actual Class: To Class: [closest distances]
@@ -123,15 +122,15 @@ class Distance_classifier():
                     else:
                         self.distance[self.labels[i]][label].append(dist[0][0])
 
-        elif test:
-            for i in range(len(self.data)):
-                shortests = self.distances(self.data[i])
-                for key, shortest in shortests.items():
-                    self.distance[self.labels[i]][key].append(shortest)
+
+        for i in range(len(self.data)):
+            shortests = self.distances(self.data[i])
+            for key, shortest in shortests.items():
+                self.distance[self.labels[i]][key].append(shortest)
 
             # #print(self.distance)
-#             self.mle()
-            add_secondary()
+        self.__mle__()
+        add_secondary()
 
     def get_details(self):
         return self.distance
@@ -139,7 +138,7 @@ class Distance_classifier():
     def get_gamma_alphas(self):
         return self.gamma_alphas
 
-    def mle(self, model = "", iterations = 5):
+    def __mle__(self, model = "", iterations = 5):
 
         def gamma_approx():
             #using Gamma(a,beta) not Gamma(alpha, theta)
@@ -230,3 +229,33 @@ class Distance_classifier():
                         total += 1
                 # #print(f"the gammas alphas were {self.gamma_alphas}")
                 return all_data if explicit else correct/total
+
+class distance_stack:
+    def __init__(self, models, data_adjustment_funct):
+        self.models = models
+        self.functs = data_adjustment_funct
+        if len(self.models) != len(self.functs):
+            raise NameError
+
+    def fit(self, X = None, y = None):
+        # print(X)
+        for index, model in enumerate(self.models):
+            # print(len(X), len(y))
+            model.fit(self.functs[index](X), y)
+            # print(self.functs[index](X))
+            model.mle()
+            print(model.gamma_alphas)
+
+    def predict(self, data):
+        vote_min_p = defaultdict(float)
+        votes = defaultdict(int)
+        # probabilities
+        for index, model in enumerate(self.models):
+            vote = model.predict(self.functs[index](data))
+            for index, prob in enumerate(vote):
+                if vote_min_p[index] < prob:
+                    vote_min_p[index] = prob
+                    print(f'changed {index}')
+            votes[model.predict(self.functs[index](data), explicit = False)] += 1
+        print(vote_min_p, votes)
+        return max(vote_min_p, key=vote_min_p.get)
