@@ -42,7 +42,7 @@ class Distance_classifier():
         self.data = self.data[proper_order]
         self.labels = self.labels[proper_order]
 
-    def distances(self, data):
+    def __distances__(self, data):
         zeros = 0
         short_dist = defaultdict(int)
         for i, to_data in enumerate(self.data):
@@ -125,7 +125,7 @@ class Distance_classifier():
 
 
         for i in range(len(self.data)):
-            shortests = self.distances(self.data[i])
+            shortests = self.__distances__(self.data[i])
             for key, shortest in shortests.items():
                 self.distance[self.labels[i]][key].append(shortest)
 
@@ -177,7 +177,7 @@ class Distance_classifier():
     def predict(self, data, model = "", explicit = True):
         if model == "gamma" or (model == "" and self.model == "gamma"):
 
-            min_dists = self.distances(data)
+            min_dists = self.__distances__(data)
             if self.count < 5:
                 # print(f"min dists is {min_dists}")
                 self.count += 1
@@ -227,7 +227,7 @@ class Distance_classifier():
                                 correct += 1
                             else:
                                 pass
-                                # #print(f"distances are {self.distances(self.data[i])}\npredicted class of {predict} when actual was {self.labels[i]}")
+                                # #print(f"distances are {self.__distances__(self.data[i])}\npredicted class of {predict} when actual was {self.labels[i]}")
                                 # #print(f"the predictions were {predictions}")
                             total += 1
                     # #print(f"the gammas alphas were {self.gamma_alphas}")
