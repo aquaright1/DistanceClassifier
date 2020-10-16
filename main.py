@@ -140,7 +140,6 @@ else:
 
 test_class.fit()
 
-test_class.mle()
 
 gamma_alphas = test_class.get_gamma_alphas()
 details = test_class.get_details()

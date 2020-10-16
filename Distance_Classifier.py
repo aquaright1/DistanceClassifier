@@ -26,13 +26,14 @@ def customScaling(distances, scale = (1/3)):
 
 class Distance_classifier():
 
-    def __init__(self, X = None, y = None, model = "gamma", threshold = .00, kd_tree = False):
+    def __init__(self, X = None, y = None, model = "gamma", threshold = .05, kd_tree = False):
         if(len(X) != len(y)):
             print("X and y are not the same dimentions")
             raise NameError
         self.kd = kd_tree
         self.data = np.asarray(X)
         self.labels = np.asarray(y)
+        # print([i for i in range(35) if i in y])
         self.model = model
         self.threshold = threshold
         self.count = 0
@@ -41,6 +42,9 @@ class Distance_classifier():
         proper_order = np.unravel_index(np.argsort(self.labels, axis=None), self.labels.shape)
         self.data = self.data[proper_order]
         self.labels = self.labels[proper_order]
+
+    def set_threshold(threshold):
+        self.threshold = threshold
 
     def __distances__(self, data):
         zeros = 0
@@ -54,8 +58,8 @@ class Distance_classifier():
                         short_dist[self.labels[i]] = expect_dist
             elif expect_dist == 0:
                 zeros += 1
-        if zeros != 1:
-            print("found", zeros, "points with distance of 0")
+        # if zeros != 1:
+        #     print("found", zeros, "points with distance of 0")
         return short_dist
 
     def fit(self, X = None, y = None):
@@ -123,7 +127,6 @@ class Distance_classifier():
                     else:
                         self.distance[self.labels[i]][label].append(dist[0][0])
 
-
         for i in range(len(self.data)):
             shortests = self.__distances__(self.data[i])
             for key, shortest in shortests.items():
@@ -131,7 +134,7 @@ class Distance_classifier():
 
             # #print(self.distance)
         self.__mle__()
-        add_secondary()
+        # add_secondary()
 
     def get_details(self):
         return self.distance
@@ -148,7 +151,7 @@ class Distance_classifier():
             x = np.zeros((len(set(self.labels)), 2)) #0 is np.log(np.mean(x)) 1 is np.mean(np.log(x))
             for cat in set(self.labels):
 #                 #print("Catigory:",self.distance[cat][cat])
-                ##print(x, self.distance)
+                # print(x, self.distance)
                 x[cat][0] = np.log(np.mean(self.distance[cat][cat]))
                 x[cat][1] = np.mean(np.log(self.distance[cat][cat]))
 
