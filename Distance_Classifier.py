@@ -155,7 +155,9 @@ class Distance_classifier():
                 x[cat][0] = np.log(np.mean(self.distance[cat][cat]))
                 x[cat][1] = np.mean(np.log(self.distance[cat][cat]))
 
+
             alphas[:,0] = .5/(x[:,0] - x[:,1])
+
 
             k = alphas[:,0]
             for i in range(iterations):

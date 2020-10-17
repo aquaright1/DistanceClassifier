@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import KDTree
-from sklearn.preprocessing import normalize, StandardScaler
+from sklearn.preprocessing import normalize, StandardScaler, LabelEncoder
 from sklearn.model_selection import train_test_split, LeaveOneOut, KFold
 from sklearn.neighbors import RadiusNeighborsClassifier, KNeighborsClassifier
 import matplotlib.pyplot as plt
@@ -24,18 +24,20 @@ def get_emp_p(array, k, theta):
     return dist.cdf(array)
 
 
-def get_data():
-    leaf_path = 'leaf.csv'
+def get_data(path = "leaf.csv", y_label = "Class (Species)", remove = None):
+    leaf_path = path
     df = pd.read_csv(leaf_path)
-    df = df.loc[:, df.columns != "Specimen Number"]
+    if remove:
+        df = df.loc[:, df.columns != remove]
 
-    df_y = df[["Class (Species)"]]
-    df_X = df.loc[:, df.columns != "Class (Species)"]
+    df_y = df[[y_label]]
+    df_X = df.loc[:, df.columns != y_label]
 
     y = df_y.to_numpy().reshape(1, len(df_y))[0]
     X = df_X.to_numpy()
-    for index, val in enumerate(y):
-        y[index] -= 7 if val > 15 else 1
+    le = LabelEncoder()
+    le.fit(y)
+    y = le.transform(y)
 
     X, y = shuffle(X, y, random_state = 40061476)
     X = normalize(X)
@@ -96,6 +98,3 @@ def pdf_compare(data, X, y, log = False):
 
         plt.savefig(f"pdf comparision for {data} class {cat} log {log}.png")
         plt.clf()
-
-X, y = get_data()
-pdf_compare("leaf", X, y, True)
