@@ -11,7 +11,7 @@ import operator
 import scipy as sp
 from sklearn import preprocessing
 import json
-from Distance_Classifier_sklearn import Distance_classifier
+from Distance_Classifier import Distance_classifier
 from sklearn.metrics import r2_score
 from sklearn.utils import shuffle
 
