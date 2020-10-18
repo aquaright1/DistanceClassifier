@@ -26,22 +26,12 @@ def customScaling(distances, scale = (1/3)):
 
 class Distance_classifier():
 
-    def __init__(self, X = None, y = None, model = "gamma", threshold = .05, kd_tree = False):
-        if(len(X) != len(y)):
-            print("X and y are not the same dimentions")
-            raise NameError
+    def __init__(self, model = "gamma", threshold = .05, kd_tree = False):
         self.kd = kd_tree
-        self.data = np.asarray(X)
-        self.labels = np.asarray(y)
         # print([i for i in range(35) if i in y])
         self.model = model
         self.threshold = threshold
         self.count = 0
-
-        #order the data to fit with processing
-        proper_order = np.unravel_index(np.argsort(self.labels, axis=None), self.labels.shape)
-        self.data = self.data[proper_order]
-        self.labels = self.labels[proper_order]
 
     def set_threshold(threshold):
         self.threshold = threshold
@@ -62,9 +52,16 @@ class Distance_classifier():
         #     print("found", zeros, "points with distance of 0")
         return short_dist
 
-    def fit(self, X = None, y = None):
-        if not isinstance(self.data, np.ndarray) and X == None or (not isinstance(self.labels, np.ndarray) and y == None):
+    def fit(self, X, y):
+        if len(X) != len(y):
             raise ValueError
+        else:
+            self.data = np.asarray(X)
+            self.labels = np.asarray(y)
+
+            proper_order = np.unravel_index(np.argsort(self.labels, axis=None), self.labels.shape)
+            self.data = self.data[proper_order]
+            self.labels = self.labels[proper_order]
 
         def find_outliers(dataset, outlier_constant = 1.5):
             #defintion of outlier w/ 1.5 iqr definition
@@ -90,13 +87,6 @@ class Distance_classifier():
                     # second [lowest_new_class] to make sure other code works
 #                     lowest_new_class += 1 # be able to make a new class
 
-        if X != None and y != None and len(X) == len(y):
-            if len(X) != len(y):
-                    #print("X and y do not have the same length")
-                raise NameError
-            else:
-                self.data = X
-                self.labels = y
 
         # store all the distances in format Actual Class: To Class: [closest distances]
         self.distance = defaultdict(lambda: defaultdict(list))
