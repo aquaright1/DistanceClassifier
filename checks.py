@@ -11,7 +11,7 @@ import operator
 import scipy as sp
 from sklearn import preprocessing
 import json
-from Distance_Classifier import Distance_classifier
+from Distance_Classifier_sklearn import Distance_classifier
 from sklearn.metrics import r2_score
 from sklearn.utils import shuffle
 
@@ -44,23 +44,22 @@ def get_data(path = "leaf.csv", y_label = "Class (Species)", remove = None):
 
     return X, y
 
-def k_folds_test(compare_model = KNeighborsClassifier):
-    X, y = get_data()
+def k_folds_test(X, y, compare_model = KNeighborsClassifier):
+
 
     kf = KFold(n_splits = 10, shuffle = True, random_state = 2020)
     scores_dc = []
     scores_knn = []
 
     kn = compare_model()
+    dist_class = Distance_classifier()
 
     for train_index, test_index in kf.split(X):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 
         # print(train_index, test_index)
-
-        dist_class = Distance_classifier(X_train, y_train)
-        dist_class.fit()
+        dist_class.fit(X_train, y_train)
         kn.fit(X_train, y_train)
         # print(dist_class.predict(X[15]), dist_class.predict(X[15], explicit = False))
         # print(kn.predict([X[15]]), y[15])
