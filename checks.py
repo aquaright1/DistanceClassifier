@@ -71,8 +71,8 @@ def k_folds_test(X, y, compare_model = KNeighborsClassifier):
     print(f"Scores {compare_model}: {scores_knn}, Avg Score: {np.mean(scores_knn)}")
 
 def pdf_compare(data, X, y, log = False):
-    dist_class = Distance_classifier(X, y)
-    dist_class.fit()
+    dist_class = Distance_classifier()
+    dist_class.fit(X, y)
 
     gamma_alphas = dist_class.get_params()
     details = dist_class.get_details()
@@ -83,17 +83,20 @@ def pdf_compare(data, X, y, log = False):
     distri_p = {}
 
     for cat, dist in details.items():
-        actual_p[cat] = get_raw_p(np.sort(dist))
-        distri_p[cat] = get_emp_p(np.sort(dist), gamma_alphas[cat,1], gamma_alphas[cat,0])
+        if len(dist) >=30:
+            actual_p[cat] = 1 - np.asarray(get_raw_p(np.sort(dist)))
+            distri_p[cat] = 1 - np.asarray(get_emp_p(np.sort(dist), gamma_alphas[cat,1], gamma_alphas[cat,0]))
 
-        plt.plot(actual_p[cat], distri_p[cat])
+            plt.plot(actual_p[cat], distri_p[cat])
+            plt.xlabel("emprical")
+            plt.ylabel("Theory")
 
-        if log:
-            plt.yscale('log')
-            plt.xscale('log')
+            if log:
+                plt.yscale('log')
+                plt.xscale('log')
 
-        plt.text(0,1, f"Has a r^2 of {r2_score(actual_p[cat],distri_p[cat])}")
-        plt.plot([0,1], [0,1])
+            plt.text(0,1, f"Has a r^2 of {r2_score(actual_p[cat],distri_p[cat])}")
+            plt.plot([0,1], [0,1])
 
-        plt.savefig(f"pdf comparision for {data} class {cat} log {log}.png")
-        plt.clf()
+            plt.savefig(f"pdf comparision for {data} class {cat} log {log}.png")
+            plt.clf()

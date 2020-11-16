@@ -38,14 +38,15 @@ class Distance_classifier():
 
     def __distances__(self, data):
         zeros = 0
-        short_dist = defaultdict(int)
+        short_dist = {}
         for i, to_data in enumerate(self.data):
             expect_dist = distance(data, to_data)
             if expect_dist != 0:
+                if self.labels[i] in short_dist:
                     if short_dist[self.labels[i]] > expect_dist:
                         short_dist[self.labels[i]] = expect_dist
-                    if short_dist[self.labels[i]] == 0:
-                        short_dist[self.labels[i]] = expect_dist
+                else:
+                    short_dist[self.labels[i]] = expect_dist
             elif expect_dist == 0:
                 zeros += 1
         # if zeros != 1:
@@ -131,7 +132,10 @@ class Distance_classifier():
 
     def get_params(self):
         # returns the gamma alphas
-        return self.gamma_alphas
+        if self.model == "gamma":
+            return self.gamma_alphas
+        elif self.model == "frechet":
+            return self.frechet_params
 
     def __mle__(self, model = "", iterations = 5):
 
@@ -160,12 +164,26 @@ class Distance_classifier():
             alphas[:, 1] = np.exp(x[:, 0])/alphas[:, 0]
             return alphas
 
+        def frechet_approx(set_m = None):
+            params = np.zeros((len(set(self.labels)), 2))
+            for cat in set(self.labels):
+                # print(self.distance[cat][cat])
+                m = np.min(self.distance[cat][cat]) if set_m == None else set_m
+                s = np.log(2) * (np.median(self.distance[cat][cat]) - m)
+                params[cat, 0] = m
+                params[cat, 1] = s
+
+            return params
+
         if model == "gamma" or (model == "" and self.model == "gamma"): #[1]
             self.model = "gamma"
 
             self.gamma_alphas = gamma_approx()
             #print("made the alphas")
+        elif model == "frechet" or (model == "" and self.model == "frechet"):
+            self.model = "frechet"
 
+            self.frechet_params = frechet_approx()
         else:
             print("Model is not supported")
 
@@ -198,6 +216,19 @@ class Distance_classifier():
 
                     predictions[cat] = max([secondary_pred, predictions[cat]])"""
 
+            if not explicit:
+                prediction = np.argmax(predictions) if predictions[np.argmax(predictions)] > self.threshold else -1
+            return predictions if explicit else prediction
+
+        elif model == "frechet" or (model == "" and self.model == "frechet"):
+            min_dists = self.__distances__(data)
+            m = self.frechet_params[:,0]
+            s = self.frechet_params[:,1]
+            predictions = np.zeros((self.frechet_params.shape[0],1))
+
+            for cat, dist in min_dists.items():
+                predictions[cat] = 1 - np.exp((-(dist - m[cat])/s[cat])**(-1))
+                #we are using using frechet with alpha = 1
             if not explicit:
                 prediction = np.argmax(predictions) if predictions[np.argmax(predictions)] > self.threshold else -1
             return predictions if explicit else prediction

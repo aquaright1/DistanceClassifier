@@ -13,6 +13,7 @@ from sklearn import preprocessing
 import json
 from Distance_Classifier import Distance_classifier
 from sklearn.metrics import r2_score
+from plotting import show_plot
 
 def get_raw_p(array):
     return np.argsort(array)/len(array)
@@ -116,10 +117,10 @@ data_location_SP = [r"D:\Storage\Research\data\SPER",
                  r"D:\Storage\Research\data\SPSticky",
                  r"D:\Storage\Research\data\SPOriginal"]
 
-num = 8
+num = 2
 cats = num if num <= 8 else 8
 
-ORGANISM = "disregard"
+ORGANISM = "CE"
 
 X = []
 y = []
@@ -131,51 +132,88 @@ for i in range(cats):
 x = X
 
 X = normalize(X)
+print(np.median(x))
 x_train, x_test, y_train, y_test = train_test_split(X,y)
     # for full test just use X and y
 if FULL:
-    test_class = Distance_classifier(x,list(y), model = "gamma", threshold = 1/len(x_train))
+    test_class = Distance_classifier(model = "frechet", threshold = 1/len(x_train))
+    test_class.fit(X,list(y))
 else:
     test_class = Distance_classifier(x_train, list(y_train))
+    test_class.fit(x_train, list(y_train))
 
-test_class.fit()
+# show_plot(norm = "Ignore", power = 1, cdfGraph = False, test = "Biogrid log", X = X, y = y, decode = False)
 
 
-gamma_alphas = test_class.get_gamma_alphas()
-details = test_class.get_details()
+gamma_alphas = test_class.get_params()
+# print(gamma_alphas)
 
-for i in details.keys():
-    details[i] = np.asarray(details[i][i])
+def frechet_pdf(x, m, s, a = 2):
+    over_s = 1/s
+    middle = ((x-m)/s)**(-1-a)
+    expo = -((x-m/s) ** (-a))
+    return over_s * middle * np.exp(expo)
 
-actual_p = {}
-distri_p = {}
+for key in test_class.get_details():
+    #print('for class', key)
+#     print(len(test_class.get_details()[key][key]))
+    fig, ax1 = plt.subplots(1, 1)
+    points = test_class.get_details()[key][key]
+    n, bins, patches = ax1.hist(points, bins = 17)
+    # print(f'{bins[-2]}: {[b for b in patches][-1].get_height()}')
+    ax1.set_ylabel('number', color="tab:red")
+    ax1.tick_params(axis='y', labelcolor="tab:red")
+    ax1.set_xlabel("distance", color = "black")
+    ax1.tick_params(axis = 'x', labelcolor = "black")
+    x = np.linspace(0,bins[-1],200)
 
-for cat, dist in details.items():
+    m, s = test_class.frechet_params[key]
+    pdf = frechet_pdf(x, m, s)
 
-    actual_p[cat] = get_raw_p(np.sort(dist))
-    distri_p[cat] = get_emp_p(np.sort(dist), gamma_alphas[cat,1], gamma_alphas[cat,0])
-
-for cat in actual_p.keys():
-    for cdf in ["actual", "theory"]:
-        np.savetxt(f"{ORGANISM}_{NUM_TO_NAME[cat]}_{cdf}.txt", actual_p[cat] if cdf == "actual" else distri_p[cat])
-
-        #plot the distributions
-    plt.plot(actual_p[cat], distri_p[cat])
-
-    if LOG:
-        plt.yscale('log')
-        plt.xscale('log')
-
-    #Label axis
-    plt.xlabel("Emprical CDF")
-    plt.ylabel("Theoretical CDF")
-
-    #put r^2 of line
-    plt.text(0,1, f"Has a r^2 of {r2_score(actual_p[cat],distri_p[cat])}")
-
-    #plot y = x
-    plt.plot([0,1], [0,1])
-
-    plt.savefig(f"{ORGANISM}_log_{NUM_TO_NAME[cat]}.png")
-
+    ax2 = ax1.twinx()
+    ax2.plot(x, pdf)
+    plt.show()
     plt.clf()
+
+
+# details = test_class.get_details()
+#
+# for i in details.keys():
+#     details[i] = np.asarray(details[i][i])
+#
+# actual_p = {}
+# distri_p = {}
+#
+# for cat, dist in details.items():
+#
+#     actual_p[cat] = 1-np.asarray(get_raw_p(np.sort(dist)))
+#     distri_p[cat] = 1-np.asarray(get_emp_p(np.sort(dist), gamma_alphas[cat,1], gamma_alphas[cat,0]))
+#
+# for cat in actual_p.keys():
+#     # for cdf in ["actual", "theory"]:
+#     #     np.savetxt(f"{ORGANISM}_{NUM_TO_NAME[cat]}_{cdf}.txt", actual_p[cat] if cdf == "actual" else distri_p[cat])
+#
+#         #plot the distributions
+#     plt.plot(actual_p[cat], distri_p[cat])
+#
+#
+#     #put r^2 of line
+#     plt.text(0.1,.5, f"Has a r^2 of {r2_score(actual_p[cat],distri_p[cat])}")
+#     plt.text(0.01,.5, f"{ORGANISM} {NUM_TO_NAME[cat]} No Log")
+#
+#     if LOG:
+#         plt.yscale('log')
+#         plt.xscale('log')
+#
+#     #Label axis
+#     plt.xlabel("Emprical CDF")
+#     plt.ylabel("Theoretical CDF")
+#
+#     #plot y = x
+#     plt.plot([0,1], [0,1])
+#
+#     plt.savefig(f"{ORGANISM}_log_{NUM_TO_NAME[cat]}_10-22 no log.png")
+#
+#     plt.clf()
+#
+#
