@@ -11,6 +11,7 @@ import operator
 import scipy as sp
 from sklearn import preprocessing
 import json
+from optimization import frechet_BFGS, gen_gamma_BFGS
 
 def distance(origin, other):
     return np.sum((origin - other) ** 2)**(1/2)
@@ -140,7 +141,7 @@ class Distance_classifier():
     def __mle__(self, model = "", iterations = 5):
 
         def gamma_approx():
-            #using Gamma(a,beta) not Gamma(alpha, theta)
+            #using Gamma(shape,scale) not Gamma(shape, rate)
             alphas = np.zeros((len(set(self.labels)), 2)) # 0 is k, 1 is theta
             x = np.zeros((len(set(self.labels)), 2)) #0 is np.log(np.mean(x)) 1 is np.mean(np.log(x))
             for cat in set(self.labels):
@@ -164,15 +165,25 @@ class Distance_classifier():
             alphas[:, 1] = np.exp(x[:, 0])/alphas[:, 0]
             return alphas
 
-        def frechet_approx(set_m = None):
-            params = np.zeros((len(set(self.labels)), 2))
+        def frechet_approx():
+            params = np.zeros((len(set(self.labels)), 3))
             for cat in set(self.labels):
                 # print(self.distance[cat][cat])
-                m = np.min(self.distance[cat][cat]) if set_m == None else set_m
-                s = np.log(2) * (np.median(self.distance[cat][cat]) - m)
-                params[cat, 0] = m
-                params[cat, 1] = s
+                optimizer = frechet_BFGS(self.distance[cat][cat])
+                params[cat] = optimizer.aprox(np.asarray([1e-5,.3,-1]))
 
+            return params
+
+        def gen_gamma_approx():
+            approx_params = gamma_approx() #gives us [shape, scale]
+            self.gamma_alphas = approx_params
+            params = np.zeros((len(set(self.labels)), 3))
+            #get the gamma aproximation for a starting point to find generalized gamma
+            for cat in set(self.labels):
+                optimizer = gen_gamma_BFGS(self.distance[cat][cat])
+                params[cat] = optimizer.aprox(np.asarray([approx_params[cat][1],approx_params[cat][0],1]))
+
+            print(f"gamma approx params: {approx_params}\ngen gamma params: {params}")
             return params
 
         if model == "gamma" or (model == "" and self.model == "gamma"): #[1]
@@ -184,10 +195,17 @@ class Distance_classifier():
             self.model = "frechet"
 
             self.frechet_params = frechet_approx()
+
+        elif model == "gen_gamma" or (model == "" and self.model == "gen_gamma"):
+            self.model = "gen_gamma"
+            self.gen_gamma_params = gen_gamma_approx()
+
+            print(f"the calculated values are {self.gen_gamma_params}")
+
         else:
             print("Model is not supported")
 
-    def predict(self, data, model = "", explicit = True):
+    def predict(self, data, model = "", explicit = True): #change explicit to different variable name
         if model == "gamma" or (model == "" and self.model == "gamma"):
 
             min_dists = self.__distances__(data)
@@ -219,6 +237,7 @@ class Distance_classifier():
             if not explicit:
                 prediction = np.argmax(predictions) if predictions[np.argmax(predictions)] > self.threshold else -1
             return predictions if explicit else prediction
+
 
         elif model == "frechet" or (model == "" and self.model == "frechet"):
             min_dists = self.__distances__(data)
