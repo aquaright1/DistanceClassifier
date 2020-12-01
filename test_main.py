@@ -1,16 +1,11 @@
 import numpy as np
-from sklearn.neighbors import KDTree
-from sklearn.preprocessing import normalize, StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.neighbors import RadiusNeighborsClassifier
 import matplotlib.pyplot as plt
 import math
 from collections import defaultdict
-import operator
 import scipy as sp
 from sklearn import preprocessing
-import json
-from new_distance_classifier import Distance_classifier
+from test_distance_classifier import Distance_classifier
 from sklearn.metrics import r2_score, accuracy_score
 
 #data file should be in txt format with comma as delimiter and last column is target values.
@@ -21,7 +16,6 @@ data=np.genfromtxt(FILENAME,delimiter=",")
 print(data.shape)# to make sure everything loaded
 X=data[:,0:data.shape[1]-1]
 y=data[:,data.shape[1]-1]
-X = normalize(X)
 x_train, x_test, y_train, y_test = train_test_split(X,y)
 
 def get_raw_p(array):
@@ -32,17 +26,11 @@ def get_emp_p(array, k, theta):
     return dist.cdf(array)
 
 LOG = True
-FULL = False
 
-# for full test just use X and y
-if FULL:
-    test_class = Distance_classifier(X,list(y), model = "gamma", threshold = 1/len(x_train))
-else:
-    test_class = Distance_classifier(x_train, list(y_train),model="gamma", threshold=1/len(x_train))
+test_class=Distance_classifier(model="gamma",threshold = 1/len(x_train))
 
-test_class.fit()
+test_class.fit(x_train,y_train)
 
-test_class.mle()
 
 gamma_alphas = test_class.get_gamma_alphas()
 details = test_class.get_details()
@@ -79,9 +67,7 @@ for cat, dist in details.items():
 #     plt.savefig(f"{ORGANISM}_log_{NUM_TO_NAME[cat]}.png")
 
     plt.clf()
-predicted=[]
-for point in x_test:
-    predicted.append(test_class.predict(point,explicit=False))
-print(accuracy_score(y_test,predicted))
+predicted=test_class.predict(x_test)
+print("Accuracy score",accuracy_score(y_test,predicted))
 #     print("distri",distri_p[cat])
 #     print("actual",actual_p[cat])
