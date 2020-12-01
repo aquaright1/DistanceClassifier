@@ -5,7 +5,6 @@ import numpy as np
 from sklearn.neighbors import KDTree
 from sklearn.preprocessing import normalize, StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.neighbors import RadiusNeighborsClassifier
 import matplotlib.pyplot as plt
 import math
 from collections import defaultdict
