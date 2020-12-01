@@ -13,6 +13,8 @@ from sklearn import preprocessing
 import json
 from optimization import frechet_BFGS, gen_gamma_BFGS
 
+
+power = 1
 def distance(origin, other):
     return np.sum((origin - other) ** 2)**(1/2)
 
@@ -24,6 +26,14 @@ def volume(dimensions, radius):
 
 def customScaling(distances, scale = (1/3)):
     return distances ** scale
+
+def distance_adjustment(distance):
+    global power
+    return distance**power
+
+def set_power(to_set):
+    global power
+    power = to_set
 
 class Distance_classifier():
 
@@ -44,10 +54,10 @@ class Distance_classifier():
             expect_dist = distance(data, to_data)
             if expect_dist != 0:
                 if self.labels[i] in short_dist:
-                    if short_dist[self.labels[i]] > expect_dist:
-                        short_dist[self.labels[i]] = expect_dist
+                    if short_dist[self.labels[i]] > distance_adjustment(expect_dist):
+                        short_dist[self.labels[i]] = distance_adjustment(expect_dist)
                 else:
-                    short_dist[self.labels[i]] = expect_dist
+                    short_dist[self.labels[i]] = distance_adjustment(expect_dist)
             elif expect_dist == 0:
                 zeros += 1
         # if zeros != 1:

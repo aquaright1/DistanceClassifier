@@ -11,7 +11,7 @@ import operator
 import scipy as sp
 from sklearn import preprocessing
 import json
-from Distance_Classifier import Distance_classifier
+from Distance_Classifier import Distance_classifier, distance_adjustment, set_power
 from sklearn.metrics import r2_score
 from plotting import show_plot
 from scipy import special
@@ -21,7 +21,7 @@ def get_raw_p(array):
 
 def get_emp_p(array, k, theta):
     dist = sp.stats.gamma(k, scale = theta)
-    return dist.cdf(array)
+    return dist.pdf(array)
 
 def get_frechet_p(array, a, s, m):
     return np.exp(-( ((array-m)/s)**(-a)))
@@ -130,63 +130,81 @@ data_location_SP = [r"D:\Storage\Research\data\SPER",
                  r"D:\Storage\Research\data\SPSticky",
                  r"D:\Storage\Research\data\SPOriginal"]
 
-num = 8
-cats = num if num <= 8 else 8
+data_locations ={
+                 "AT":data_location_AT,
+                 "CE": data_location_CE,
+                 "DM": data_location_DM,
+                 "EC": data_location_EC,
+                 "HS": data_location_HS,
+                 "RN": data_location_RN,
+                 "SC": data_location_SC,
+                 "SP": data_location_SP
+}
 
-ORGANISM = "CE"
+for power in [1/4, 1/3, 1/2, 2/3, 3/4, 4/3, 3/2, 3,4]:
+    set_power(power)
 
-X = []
-y = []
-for i in range(cats):
-        x = pd.read_csv(data_location_CE[i], header = None, sep = ' ').iloc[:,:].values
-        for b in x:
-            X.append(b)
-            y.append(i)
-x = X
+    for ORGANISM, location in data_locations.items():
+        num = 8
+        cats = num if num <= 8 else 8
 
-X = normalize(X)
-print(np.median(x))
-x_train, x_test, y_train, y_test = train_test_split(X,y)
-    # for full test just use X and y
-if FULL:
-    test_class = Distance_classifier(model = "gen_gamma", threshold = 1/len(x_train))
-    test_class.fit(X,list(y))
-else:
-    test_class = Distance_classifier(x_train, list(y_train))
-    test_class.fit(x_train, list(y_train))
+        X = []
+        y = []
+        for i in range(cats):
+                x = pd.read_csv(location[i], header = None, sep = ' ').iloc[:,:].values
+                for b in x:
+                    X.append(b)
+                    y.append(i)
+        x = X
 
-# show_plot(norm = "Ignore", power = 1, cdfGraph = False, test = "Biogrid log", X = X, y = y, decode = False)
+        X = normalize(X)
+        print(np.median(x))
+        x_train, x_test, y_train, y_test = train_test_split(X,y)
+            # for full test just use X and y
+        if FULL:
+            test_class = Distance_classifier(model = "gamma", threshold = 1/len(x_train))
+            test_class.fit(X,list(y))
+        else:
+            test_class = Distance_classifier(x_train, list(y_train))
+            test_class.fit(x_train, list(y_train))
 
-# print(gamma_alphas)
+        # show_plot(norm = "Ignore", power = 1, cdfGraph = False, test = "Biogrid log", X = X, y = y, decode = False)
 
-print("values")
+        # print(gamma_alphas)
 
-for key in test_class.get_details():
-    dist = test_class.get_details()[key]
-    #print('for class', key)
-#     print(len(test_class.get_details()[key][key]))
-    fig, ax1 = plt.subplots(1, 1)
-    points = test_class.get_details()[key][key]
-    n, bins, patches = ax1.hist(points, bins = 17)
-    # print(f'{bins[-2]}: {[b for b in patches][-1].get_height()}')
-    ax1.set_ylabel('number', color="tab:red")
-    ax1.tick_params(axis='y', labelcolor="tab:red")
-    ax1.set_xlabel("distance", color = "black")
-    ax1.tick_params(axis = 'x', labelcolor = "black")
+        print("values")
 
-    a,d,p = test_class.gen_gamma_params[key]
-    k, θ = test_class.gamma_alphas[key]
-    x = np.linspace(0,bins[-1],200)
-    print(a,d,p)
-    pdf = gen_gamma_pdf(x, a, d, p)
-    gamma_pdf = get_emp_p(x, k, θ)
-    ax2 = ax1.twinx()
-    ax3 = ax2.twinx()
-    ax2.plot(x, pdf, c = "red")
-    ax3.plot(x, gamma_pdf, c = "black", alpha = .5)
-    # ax2.set_yscale('log')
-    plt.show()
-    #plt.clf()
+
+        for key in test_class.get_details():
+            dist = test_class.get_details()[key]
+            #print('for class', key)
+        #     print(len(test_class.get_details()[key][key]))
+            fig, ax1 = plt.subplots(1, 1)
+            ax2 = ax1.twinx()
+            ax3 = ax2.twinx()
+
+            points = test_class.get_details()[key][key]
+            n, bins, patches = ax1.hist(points, bins = 17)
+            # print(f'{bins[-2]}: {[b for b in patches][-1].get_height()}')
+            ax1.set_ylabel('number', color="tab:red")
+            ax1.tick_params(axis='y', labelcolor="tab:red")
+            ax1.set_xlabel("distance", color = "black")
+            ax1.tick_params(axis = 'x', labelcolor = "black")
+
+            # a,d,p = test_class.gen_gamma_params[key]
+            k, θ = test_class.gamma_alphas[key]
+            x = np.linspace(0,bins[-1],200)
+            # print(a,d,p)
+            # pdf = gen_gamma_pdf(x, a, d, p)
+            gamma_pdf = get_emp_p(x, k, θ)
+
+            # ax2.plot(x, pdf, c = "red")
+            ax3.plot(x, gamma_pdf, c = "black", alpha = .5)
+            # ax2.set_yscale('log')
+            # plt.show()
+            plt.savefig(f"{ORGANISM}_{NUM_TO_NAME[key]}_pdf vs distribution-{power}.png")
+            plt.clf()
+            plt.close()
 
 
 # details = test_class.get_details()
