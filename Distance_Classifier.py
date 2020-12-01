@@ -11,7 +11,10 @@ import operator
 import scipy as sp
 from sklearn import preprocessing
 import json
+from optimization import frechet_BFGS, gen_gamma_BFGS
 
+
+power = 1
 def distance(origin, other):
     return np.sum((origin - other) ** 2)**(1/2)
 
@@ -24,43 +27,53 @@ def volume(dimensions, radius):
 def customScaling(distances, scale = (1/3)):
     return distances ** scale
 
+def distance_adjustment(distance):
+    global power
+    return distance**power
+
+def set_power(to_set):
+    global power
+    power = to_set
+
 class Distance_classifier():
 
-    def __init__(self, X = None, y = None, model = "gamma", threshold = .00, kd_tree = False):
-        if(len(X) != len(y)):
-            print("X and y are not the same dimentions")
-            raise NameError
+    def __init__(self, model = "gamma", threshold = .05, kd_tree = False):
         self.kd = kd_tree
-        self.data = np.asarray(X)
-        self.labels = np.asarray(y)
+        # print([i for i in range(35) if i in y])
         self.model = model
         self.threshold = threshold
         self.count = 0
 
-        #order the data to fit with processing
-        proper_order = np.unravel_index(np.argsort(self.labels, axis=None), self.labels.shape)
-        self.data = self.data[proper_order]
-        self.labels = self.labels[proper_order]
+    def set_threshold(threshold):
+        self.threshold = threshold
 
     def __distances__(self, data):
         zeros = 0
-        short_dist = defaultdict(int)
+        short_dist = {}
         for i, to_data in enumerate(self.data):
             expect_dist = distance(data, to_data)
             if expect_dist != 0:
-                    if short_dist[self.labels[i]] > expect_dist:
-                        short_dist[self.labels[i]] = expect_dist
-                    if short_dist[self.labels[i]] == 0:
-                        short_dist[self.labels[i]] = expect_dist
+                if self.labels[i] in short_dist:
+                    if short_dist[self.labels[i]] > distance_adjustment(expect_dist):
+                        short_dist[self.labels[i]] = distance_adjustment(expect_dist)
+                else:
+                    short_dist[self.labels[i]] = distance_adjustment(expect_dist)
             elif expect_dist == 0:
                 zeros += 1
-        if zeros != 1:
-            print("found", zeros, "points with distance of 0")
+        # if zeros != 1:
+        #     print("found", zeros, "points with distance of 0")
         return short_dist
 
-    def fit(self, X = None, y = None):
-        if not isinstance(self.data, np.ndarray) and X == None or (not isinstance(self.labels, np.ndarray) and y == None):
+    def fit(self, X, y):
+        if len(X) != len(y):
             raise ValueError
+        else:
+            self.data = np.asarray(X)
+            self.labels = np.asarray(y)
+
+            proper_order = np.unravel_index(np.argsort(self.labels, axis=None), self.labels.shape)
+            self.data = self.data[proper_order]
+            self.labels = self.labels[proper_order]
 
         def find_outliers(dataset, outlier_constant = 1.5):
             #defintion of outlier w/ 1.5 iqr definition
@@ -86,13 +99,6 @@ class Distance_classifier():
                     # second [lowest_new_class] to make sure other code works
 #                     lowest_new_class += 1 # be able to make a new class
 
-        if X != None and y != None and len(X) == len(y):
-            if len(X) != len(y):
-                    #print("X and y do not have the same length")
-                raise NameError
-            else:
-                self.data = X
-                self.labels = y
 
         # store all the distances in format Actual Class: To Class: [closest distances]
         self.distance = defaultdict(lambda: defaultdict(list))
@@ -123,7 +129,6 @@ class Distance_classifier():
                     else:
                         self.distance[self.labels[i]][label].append(dist[0][0])
 
-
         for i in range(len(self.data)):
             shortests = self.__distances__(self.data[i])
             for key, shortest in shortests.items():
@@ -131,28 +136,33 @@ class Distance_classifier():
 
             # #print(self.distance)
         self.__mle__()
-        add_secondary()
+        # add_secondary()
 
     def get_details(self):
         return self.distance
 
     def get_params(self):
         # returns the gamma alphas
-        return self.gamma_alphas
+        if self.model == "gamma":
+            return self.gamma_alphas
+        elif self.model == "frechet":
+            return self.frechet_params
 
     def __mle__(self, model = "", iterations = 5):
 
         def gamma_approx():
-            #using Gamma(a,beta) not Gamma(alpha, theta)
+            #using Gamma(shape,scale) not Gamma(shape, rate)
             alphas = np.zeros((len(set(self.labels)), 2)) # 0 is k, 1 is theta
             x = np.zeros((len(set(self.labels)), 2)) #0 is np.log(np.mean(x)) 1 is np.mean(np.log(x))
             for cat in set(self.labels):
 #                 #print("Catigory:",self.distance[cat][cat])
-                ##print(x, self.distance)
+                # print(x, self.distance)
                 x[cat][0] = np.log(np.mean(self.distance[cat][cat]))
                 x[cat][1] = np.mean(np.log(self.distance[cat][cat]))
 
+
             alphas[:,0] = .5/(x[:,0] - x[:,1])
+
 
             k = alphas[:,0]
             for i in range(iterations):
@@ -165,16 +175,47 @@ class Distance_classifier():
             alphas[:, 1] = np.exp(x[:, 0])/alphas[:, 0]
             return alphas
 
+        def frechet_approx():
+            params = np.zeros((len(set(self.labels)), 3))
+            for cat in set(self.labels):
+                # print(self.distance[cat][cat])
+                optimizer = frechet_BFGS(self.distance[cat][cat])
+                params[cat] = optimizer.aprox(np.asarray([1e-5,.3,-1]))
+
+            return params
+
+        def gen_gamma_approx():
+            approx_params = gamma_approx() #gives us [shape, scale]
+            self.gamma_alphas = approx_params
+            params = np.zeros((len(set(self.labels)), 3))
+            #get the gamma aproximation for a starting point to find generalized gamma
+            for cat in set(self.labels):
+                optimizer = gen_gamma_BFGS(self.distance[cat][cat])
+                params[cat] = optimizer.aprox(np.asarray([approx_params[cat][1],approx_params[cat][0],1]))
+
+            print(f"gamma approx params: {approx_params}\ngen gamma params: {params}")
+            return params
+
         if model == "gamma" or (model == "" and self.model == "gamma"): #[1]
             self.model = "gamma"
 
             self.gamma_alphas = gamma_approx()
             #print("made the alphas")
+        elif model == "frechet" or (model == "" and self.model == "frechet"):
+            self.model = "frechet"
+
+            self.frechet_params = frechet_approx()
+
+        elif model == "gen_gamma" or (model == "" and self.model == "gen_gamma"):
+            self.model = "gen_gamma"
+            self.gen_gamma_params = gen_gamma_approx()
+
+            print(f"the calculated values are {self.gen_gamma_params}")
 
         else:
             print("Model is not supported")
 
-    def predict(self, data, model = "", explicit = True):
+    def predict(self, data, model = "", explicit = True): #change explicit to different variable name
         if model == "gamma" or (model == "" and self.model == "gamma"):
 
             min_dists = self.__distances__(data)
@@ -203,6 +244,20 @@ class Distance_classifier():
 
                     predictions[cat] = max([secondary_pred, predictions[cat]])"""
 
+            if not explicit:
+                prediction = np.argmax(predictions) if predictions[np.argmax(predictions)] > self.threshold else -1
+            return predictions if explicit else prediction
+
+
+        elif model == "frechet" or (model == "" and self.model == "frechet"):
+            min_dists = self.__distances__(data)
+            m = self.frechet_params[:,0]
+            s = self.frechet_params[:,1]
+            predictions = np.zeros((self.frechet_params.shape[0],1))
+
+            for cat, dist in min_dists.items():
+                predictions[cat] = 1 - np.exp((-(dist - m[cat])/s[cat])**(-1))
+                #we are using using frechet with alpha = 1
             if not explicit:
                 prediction = np.argmax(predictions) if predictions[np.argmax(predictions)] > self.threshold else -1
             return predictions if explicit else prediction
