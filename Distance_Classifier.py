@@ -29,7 +29,7 @@ def customScaling(distances, scale = (1/3)):
 
 def distance_adjustment(distance):
     global power
-    return distance**power
+    return distance
 
 def set_power(to_set):
     global power

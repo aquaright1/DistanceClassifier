@@ -18,11 +18,11 @@ from plotting import show_plot
 from scipy import special
 
 def get_raw_p(array):
-    return np.argsort(array)/len(array)
+    return 1 - (np.argsort(array)+1)/(len(array) + 1)
 
 def get_emp_p(array, k, theta):
     dist = sp.stats.gamma(k, scale = theta)
-    return dist.pdf(array)
+    return 1 - dist.cdf(array)
 
 def get_frechet_p(array, a, s, m):
     return np.exp(-( ((array-m)/s)**(-a)))
@@ -52,28 +52,39 @@ for power in [1/4, 1/3, 1/2, 2/3, 3/4,1,2, 4/3, 3/2, 3,4]:
         #print('for class', key)
     #     print(len(test_class.get_details()[key][key]))
         fig, ax1 = plt.subplots(1, 1)
-        ax2 = ax1.twinx()
-        ax3 = ax2.twinx()
+        # ax2 = ax1.twinx()
+        # ax3 = ax2.twinx()
 
         points = test_class.get_details()[key][key]
-        n, bins, patches = ax1.hist(points, bins = 17)
+        # n, bins, patches = ax1.hist(points, bins = 17)
         # print(f'{bins[-2]}: {[b for b in patches][-1].get_height()}')
-        ax1.set_ylabel('number', color="tab:red")
-        ax1.tick_params(axis='y', labelcolor="tab:red")
-        ax1.set_xlabel("distance", color = "black")
-        ax1.tick_params(axis = 'x', labelcolor = "black")
+        # ax1.set_ylabel('number', color="tab:red")
+        # ax1.tick_params(axis='y', labelcolor="tab:red")
+        # ax1.set_xlabel("distance", color = "black")
+        # ax1.tick_params(axis = 'x', labelcolor = "black")
 
         # a,d,p = test_class.gen_gamma_params[key]
         k, θ = test_class.gamma_alphas[key]
-        x = np.linspace(0,bins[-1],200)
         # print(a,d,p)
         # pdf = gen_gamma_pdf(x, a, d, p)
-        gamma_pdf = get_emp_p(x, k, θ)
+        points = test_class.get_details()[key][key]
+        sorted_points = np.sort(points)
+        gamma_p = get_emp_p(sorted_points, k, θ)
+        actual_p = get_raw_p(sorted_points)
 
+        print(np.max(actual_p), np.min(actual_p))
+        # print((np.max(actual_p), np.max(gamma_p)))
+        # x = np.linspace(0,(np.max(np.max(actual_p), np.max(gamma_p))),200)
+        # print(np.argsort(gamma_p))
+        # print(np.argsort(actual_p))
+        ax1.plot(actual_p,actual_p)
         # ax2.plot(x, pdf, c = "red")
-        ax3.plot(x, gamma_pdf, c = "black", alpha = .5)
-        # ax2.set_yscale('log')
+        ax1.plot(actual_p, gamma_p, c = "black", alpha = .5)
+        ax1.set_yscale('log')
+        ax1.set_xscale('log')
+        plt.xlabel("actual p score")
+        plt.ylabel("gamma predicteed p score")
         # plt.show()
-        plt.savefig(f"iris_class_{key}_pdf vs distribution-{power}.png")
-        plt.clf()
+        plt.savefig(f"iris_class_{key}_p_value compare-{power}__1.png")
+        # plt.clf()
         plt.close()

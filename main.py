@@ -17,11 +17,11 @@ from plotting import show_plot
 from scipy import special
 
 def get_raw_p(array):
-    return np.argsort(array)/len(array)
+    return 1-(np.argsort(array)+1)/(len(array) + 1)
 
 def get_emp_p(array, k, theta):
     dist = sp.stats.gamma(k, scale = theta)
-    return dist.pdf(array)
+    return 1-dist.cdf(array)
 
 def get_frechet_p(array, a, s, m):
     return np.exp(-( ((array-m)/s)**(-a)))
@@ -131,35 +131,34 @@ data_location_SP = [r"D:\Storage\Research\data\SPER",
                  r"D:\Storage\Research\data\SPOriginal"]
 
 data_locations ={
-                 "AT":data_location_AT,
-                 "CE": data_location_CE,
-                 "DM": data_location_DM,
-                 "EC": data_location_EC,
-                 "HS": data_location_HS,
-                 "RN": data_location_RN,
-                 "SC": data_location_SC,
-                 "SP": data_location_SP
+                 "AT":data_location_AT#,
+                 # "CE": data_location_CE,
+                 # "DM": data_location_DM,
+                 # "EC": data_location_EC,
+                 # "HS": data_location_HS,
+                 # "RN": data_location_RN,
+                 # "SC": data_location_SC,
+                 # "SP": data_location_SP
 }
+for ORGANISM, location in data_locations.items():
+    num = 8
+    cats = num if num <= 8 else 8
 
-for power in [1/4, 1/3, 1/2, 2/3, 3/4, 4/3, 3/2, 3,4]:
-    set_power(power)
+    X = []
+    y = []
+    for i in range(cats):
+            x = pd.read_csv(location[i], header = None, sep = ' ').iloc[:,:].values
+            for b in x:
+                X.append(b)
+                y.append(i)
+    x = X
 
-    for ORGANISM, location in data_locations.items():
-        num = 8
-        cats = num if num <= 8 else 8
+    X = normalize(X)
+    print(np.median(x))
+    x_train, x_test, y_train, y_test = train_test_split(X,y)
 
-        X = []
-        y = []
-        for i in range(cats):
-                x = pd.read_csv(location[i], header = None, sep = ' ').iloc[:,:].values
-                for b in x:
-                    X.append(b)
-                    y.append(i)
-        x = X
-
-        X = normalize(X)
-        print(np.median(x))
-        x_train, x_test, y_train, y_test = train_test_split(X,y)
+    for power in [0]:
+        set_power(power)
             # for full test just use X and y
         if FULL:
             test_class = Distance_classifier(model = "gamma", threshold = 1/len(x_train))
@@ -174,36 +173,69 @@ for power in [1/4, 1/3, 1/2, 2/3, 3/4, 4/3, 3/2, 3,4]:
 
         print("values")
 
-
+        '''
+        Change to logs b/c logs are wonky
+        '''
+        for key in test_class.get_details():
+            test_class.distance[key][key] = np.log(test_class.distance[key][key])
+            test_class.distance[key][key] -= (np.min(test_class.distance[key][key]) - .00001)
+        '''
+        then refit
+        '''
+        test_class.__mle__()
+        print("refitted")
         for key in test_class.get_details():
             dist = test_class.get_details()[key]
             #print('for class', key)
         #     print(len(test_class.get_details()[key][key]))
             fig, ax1 = plt.subplots(1, 1)
-            ax2 = ax1.twinx()
-            ax3 = ax2.twinx()
 
             points = test_class.get_details()[key][key]
-            n, bins, patches = ax1.hist(points, bins = 17)
-            # print(f'{bins[-2]}: {[b for b in patches][-1].get_height()}')
-            ax1.set_ylabel('number', color="tab:red")
-            ax1.tick_params(axis='y', labelcolor="tab:red")
-            ax1.set_xlabel("distance", color = "black")
-            ax1.tick_params(axis = 'x', labelcolor = "black")
+            sorted_points = np.sort(points)
+            k, θ = test_class.get_params()[key]
+            gamma_p = get_emp_p(sorted_points, k, θ)
+            actual_p = get_raw_p(sorted_points)
 
-            # a,d,p = test_class.gen_gamma_params[key]
-            k, θ = test_class.gamma_alphas[key]
-            x = np.linspace(0,bins[-1],200)
-            # print(a,d,p)
-            # pdf = gen_gamma_pdf(x, a, d, p)
-            gamma_pdf = get_emp_p(x, k, θ)
-
+            print(np.max(actual_p), np.min(actual_p))
+            # print((np.max(actual_p), np.max(gamma_p)))
+            # x = np.linspace(0,(np.max(np.max(actual_p), np.max(gamma_p))),200)
+            # print(np.argsort(gamma_p))
+            # print(np.argsort(actual_p))
+            ax1.plot(actual_p,actual_p)
+            ax1.set_yscale("log")
+            ax1.set_xscale('log')
             # ax2.plot(x, pdf, c = "red")
-            ax3.plot(x, gamma_pdf, c = "black", alpha = .5)
-            # ax2.set_yscale('log')
+            ax1.plot( actual_p,gamma_p, c = "black", alpha = .75)
+            plt.xlabel("actual p value")
+            plt.ylabel("gamma predicted p value")
+            # ax2.set_ysc0ale('log')
+            # ax2.set_xscale('log')
             # plt.show()
-            plt.savefig(f"{ORGANISM}_{NUM_TO_NAME[key]}_pdf vs distribution-{power}.png")
-            plt.clf()
+            # plt.savefig(f"iris_class_{key}_p_value compare-{power}.png")
+            # # plt.clf()
+            # plt.close()
+
+            # points = test_class.get_details()[key][key]
+            # n, bins, patches = ax1.hist(points, bins = 17)
+            # # print(f'{bins[-2]}: {[b for b in patches][-1].get_height()}')
+            # ax1.set_ylabel('number', color="tab:red")
+            # ax1.tick_params(axis='y', labelcolor="tab:red")
+            # ax1.set_xlabel("distance", color = "black")
+            # ax1.tick_params(axis = 'x', labelcolor = "black")
+            #
+            # # a,d,p = test_class.gen_gamma_params[key]
+            # k, θ = test_class.gamma_alphas[key]
+            # x = np.linspace(0,bins[-1],200)
+            # # print(a,d,p)
+            # # pdf = gen_gamma_pdf(x, a, d, p)
+            # gamma_pdf = get_emp_p(x, k, θ)
+            #
+            # # ax2.plot(x, pdf, c = "red")
+            # ax3.plot(x, gamma_pdf, c = "black", alpha = .5)
+            # # ax2.set_yscale('log')
+            # plt.show()
+            plt.savefig(f"{ORGANISM}_{NUM_TO_NAME[key]}_p value compare- (1-log).png")
+            # plt.clf()
             plt.close()
 
 
