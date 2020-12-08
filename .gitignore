@@ -10,3 +10,4 @@ __pycache__
 *.jl
 *.JPG
 ReadMe.pdf
+!pLog_pvalue/*.png
