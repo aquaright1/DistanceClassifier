@@ -12,6 +12,8 @@ import scipy as sp
 from sklearn import preprocessing
 import json
 
+ε = .00001
+
 class Distance_classifier(BaseEstimator):
 
     def __init__(self, X=None, y=None, model = "gamma", threshold = .00, kd_tree = False, outlier_constant=1.5):
@@ -32,11 +34,11 @@ class Distance_classifier(BaseEstimator):
         self.model = model
         self.threshold = threshold
         self.kd = kd_tree
-        self.outlier_constant=outlier_constant
+        self.outlier_constant = outlier_constant
 
     def calc_distance(self,origin, other):
         return np.sum((origin - other) ** 2)**(1/2)
-    
+
     def volume(self,dimensions, radius):
         return np.pi**(dimensions/2) * radius ** dimensions/ sp.special.gamma(dimensions/2 +1)
 
@@ -58,6 +60,8 @@ class Distance_classifier(BaseEstimator):
                 zeros += 1
         if zeros != 1:
             print("found", zeros, "points with distance of 0")
+
+
         return short_dist
 
     def fit(self, X = None, y = None, test = True):
@@ -129,11 +133,21 @@ class Distance_classifier(BaseEstimator):
                 for key, shortest in shortests.items():
                     self.distance[self.labels[i]][key].append(shortest)
 
-            # print(self.distance)
-#             self.mle()
-            add_secondary()
+        self.dist_adjust = default_dict(int)
+        # logs all the values then sets the minimum to ε
+        # and saves what value needed to be subtracted so that minimum
+        # is ε
+        for key in self.distance.keys():
+            self.distance[key][key] = np.log(self.distance[key][key])
+            self.dist_adjust[key] = np.min(self.distance[key][key])
+            self.distance[key] -= self.dist_adjust[key]
+            self.distance[key] += ε
+
+        # get get the parameters after making the distances
+        self.mle()
+
         return self
-    
+
     def get_details(self):
         return self.distance
 
@@ -177,7 +191,15 @@ class Distance_classifier(BaseEstimator):
     def predict(self, data, model = "", explicit = True):
         if model == "gamma" or (model == "" and self.model == "gamma"):
 
+            #grabs the minimum to each category
             min_dists = self.distances(data)
+
+            #adjust to so that log works
+            for key in min_dists.keys():
+                # takes the log then does the correct shift as the distributions are shifted
+                min_dist[key] = np.log(min_dist[key]) - self.dist_adjust[key]
+                min_dist[key] += ε
+
             theta = self.gamma_alphas[:,0]
             k = self.gamma_alphas[:,1]
             predictions = np.zeros((self.gamma_alphas.shape[0],1))
@@ -200,7 +222,7 @@ class Distance_classifier(BaseEstimator):
                     predictions[cat] = max([secondary_pred, predictions[cat]])"""
 
             if not explicit:
-                prediction = np.argmax(predictions) 
+                prediction = np.argmax(predictions)
                 #if predictions[np.argmax(predictions)]  >= 1/np.count(self.labels, np.argmax(predictions)) else -1
             return predictions if explicit else prediction
 
@@ -227,7 +249,3 @@ class Distance_classifier(BaseEstimator):
                         total += 1
                 print(f"the gammas alphas were {self.gamma_alphas}")
                 return all_data if explicit else correct/total
-
-
-
-
