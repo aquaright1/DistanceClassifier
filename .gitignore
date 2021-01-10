@@ -11,3 +11,4 @@ __pycache__
 *.JPG
 ReadMe.pdf
 !Log_pvalue/*.png
+!log model psudocode.txt

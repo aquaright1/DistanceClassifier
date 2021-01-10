@@ -208,7 +208,10 @@ class Distance_classifier(BaseEstimator):
             models = [sp.stats.gamma(theta[int(a)], scale = k[int(a)]) for a in min_dists.keys()]
 
             for cat, dist in min_dists.items():
-                predictions[int(cat)] = 1 - models[int(cat)].cdf(dist)
+                if dist <= 0:
+                    predictions[int(cat)] = 1
+                else:
+                    predictions[int(cat)] = 1 - models[int(cat)].cdf(dist)
                 # get prediction for each class
 
             """# Uncomment for secondary distribution
