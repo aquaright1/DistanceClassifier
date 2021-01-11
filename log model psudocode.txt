@@ -5,7 +5,7 @@ Algorithm to find closest neighbor: (Closest)
     ARGUMENTS: points, classes, fitting
         points: points to find closest neighbor to list/array of arrays
         classes: the classes that we want to find distance to
-        fitting: boolean, True when fitting the data, False else
+        fitting: boolean, True when fitting the data, False otherwise
 
     RETURNS: closest
         closest: float that tells the closest point
