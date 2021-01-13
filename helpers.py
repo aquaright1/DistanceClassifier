@@ -1,7 +1,12 @@
 ### Helper functions ###
 import scipy as sp
+import numpy as np
 
-def gamma_mle(data, iterations = 4):
+def gamma_mle(data: np.ndarray, iterations = 4: int):
+    '''
+    data: numpy array of the data that is to be fitted to a gamma distribution
+    interations: number of times the loop is to run, 4 tends to be sufficint
+    '''
     #using Gamma(shape,scale) not Gamma(shape, rate)
     alpha = 0 # 0 is k, 1 is theta
     x = np.asarray([0,0]) #0 is np.log(np.mean(x)) 1 is np.mean(np.log(x))
