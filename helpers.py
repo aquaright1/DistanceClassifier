@@ -2,18 +2,28 @@
 import scipy as sp
 import numpy as np
 
-"""
-TODO: function to find closest
-"""
-def closest():
-    pass
+
+def closest_linear(point: np.ndarray, data: np.ndarray) -> float:
+    '''
+    point: the point to find nearest neighbor distance to, as a numpy array of features (coordinates in feature space)
+    data: the set of candidate points for nearest neighbor distance, ie the points that could be the nearest neighbor
+
+    returns: the distance from point to its nearest neighbor in data, as a float
+
+    NOTE: make sure that `point` is not included in the `data` array, otherwise the returned distance may incorrectly be 0.
+    '''
+
+    square_diffs = (data - point)**2
+    distances = np.sqrt(square_diffs.sum(axis=1))
+
+    return np.min(distances)
 
 def shift(data: np.ndarray):
     minimum = np.min(data)
     return (data + minimum, minimum)
 
 
-def gamma_mle(data: np.ndarray, iterations = 4: int):
+def gamma_mle(data: np.ndarray, iterations: int = 4):
     '''
     data: numpy array of the data that is to be fitted to a gamma distribution
     interations: number of times the loop is to run, 4 tends to be sufficint
