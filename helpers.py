@@ -2,6 +2,17 @@
 import scipy as sp
 import numpy as np
 
+"""
+TODO: function to find closest
+"""
+def closest():
+    pass
+
+def shift(data: np.ndarray):
+    minimum = np.min(data)
+    return (data + minimum, minimum)
+
+
 def gamma_mle(data: np.ndarray, iterations = 4: int):
     '''
     data: numpy array of the data that is to be fitted to a gamma distribution
