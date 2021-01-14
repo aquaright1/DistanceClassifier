@@ -14,7 +14,7 @@ def closest_linear(point: np.ndarray, data: np.ndarray, fit = False: bool) -> fl
     square_diffs = (data - point)**2
     distances = np.sqrt(square_diffs.sum(axis=1))
 
-    return np.partition(distances, fit)[fit]
+    return np.partition(distances, int(fit))[int(fit)]
 
 def shift(data: np.ndarray):
     minimum = np.min(data)
