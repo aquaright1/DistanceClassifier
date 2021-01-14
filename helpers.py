@@ -16,11 +16,6 @@ def closest_linear(point: np.ndarray, data: np.ndarray, fit: bool = False) -> fl
 
     return np.partition(distances, int(fit))[int(fit)]
 
-def shift(data: np.ndarray):
-    minimum = np.min(data)
-    return (data + minimum, minimum)
-
-
 def gamma_mle(data: np.ndarray, iterations: int = 4):
     '''
     data: numpy array of the data that is to be fitted to a gamma distribution

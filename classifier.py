@@ -1,6 +1,6 @@
 ### Classifier ###
 from sklearn.preprocessing import LabelEncoder
-from helpers import closest_linear, shift, gamma_mle
+from helpers import closest_linear, gamma_mle
 from collections import defaultdict
 
 class NNClassifier():
