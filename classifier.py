@@ -1,6 +1,6 @@
 ### Classifier ###
 from sklearn.preprocessing import LabelEncoder
-from helpers import closest, shift, gamma_mle
+from helpers import closest_linear, shift, gamma_mle
 from collections import defaultdict
 
 class NNClassifier():
@@ -24,7 +24,7 @@ class NNClassifier():
         self.distances = defaultdict(list)
         for index, data in enumerate(self.input_data):
             label = self.encoded_labels
-            distances[label].append(closest(data,self.input_data, fit = True))
+            distances[label].append(closest_linear(data,self.input_data, fit = True))
 
     def predict(self,X):
         '''
