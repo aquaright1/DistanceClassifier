@@ -42,7 +42,7 @@ class NNClassifier():
             # find the parameters for gamma distribution and save them
             self.params[key][0], self.params[key][1] = gamma_mle(self.distances[key])
 
-    def predict(self,X):
+    def predict(self,X, full = False):
         '''
         TODO:
             implement the prediciton
