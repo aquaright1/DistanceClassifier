@@ -24,8 +24,16 @@ class NNClassifier():
         self.distances = defaultdict(list)
         for index, data in enumerate(self.input_data):
             label = self.encoded_labels
-            distances[label].append(closest_linear(data,self.input_data, fit = True))
+            distances[label].append(closest_linear(data,self.input_data[self.encoded_labels == label], fit = True))
 
+        for key in self.distances.keys():
+            self.distances[key] = np.log(np.asarray(self.distances[key]))
+            minimum = np.min(self.distances[key])
+            self.params[key][2] = minimum
+            self.distances[key] -= minimum
+            self.distances[key] += self.ε
+            self.params[key][0], self.params[key][1] = gamma_mle(self.distances[key])
+            
     def predict(self,X):
         '''
         TODO:
