@@ -44,7 +44,9 @@ class NNClassifier():
 
     def predict(self,X, full = False):
         '''
-        TODO:
-            implement the prediciton
+        X: data points for classificationm
+        full: whether or not to give all the p-scores
+
+        returns: np array of predictions or np array of nparrays of p-scores
         '''
         pass
