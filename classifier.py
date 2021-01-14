@@ -24,7 +24,7 @@ class NNClassifier():
         self.distances = defaultdict(list)
         for index, data in enumerate(self.input_data):
             label = self.encoded_labels
-            distances[label].append(closest(data,self.input_data))
+            distances[label].append(closest(data,self.input_data, fit = True))
 
     def predict(self,X):
         '''
