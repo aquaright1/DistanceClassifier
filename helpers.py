@@ -21,7 +21,7 @@ def gamma_mle(data: np.ndarray, iterations: int = 4):
     data: numpy array of the data that is to be fitted to a gamma distribution
     interations: number of times the loop is to run, 4 tends to be sufficint
 
-    returns a
+    returns an array of the parameters for ~Γ(shape, scale)
     '''
     #using Gamma(shape,scale) not Gamma(shape, rate)
     alpha = [0,0] # 0 is k, 1 is theta
