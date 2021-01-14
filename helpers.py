@@ -3,7 +3,7 @@ import scipy as sp
 import numpy as np
 
 
-def closest_linear(point: np.ndarray, data: np.ndarray, fit = False: bool) -> float:
+def closest_linear(point: np.ndarray, data: np.ndarray, fit: bool = False) -> float:
     '''
     point: the point to find nearest neighbor distance to, as a numpy array of features (coordinates in feature space)
     data: the set of candidate points for nearest neighbor distance, ie the points that could be the nearest neighbor
