@@ -2,6 +2,7 @@
 from sklearn.preprocessing import LabelEncoder
 from helpers import closest_linear, gamma_mle
 from collections import defaultdict
+import scipy as sp
 
 class NNClassifier():
     def __init__(self, ε = 0.0001: float, threshold = .01: float):
@@ -42,11 +43,45 @@ class NNClassifier():
             # find the parameters for gamma distribution and save them
             self.params[key][0], self.params[key][1] = gamma_mle(self.distances[key])
 
-    def predict(self,X, full = False):
+    def predict(self,X, p-value = False):
         '''
-        X: data points for classificationm
+        X: data points for classification
         full: whether or not to give all the p-scores
 
         returns: np array of predictions or np array of nparrays of p-scores
         '''
-        pass
+
+        # put in a place for models to be able to saved
+        models = [i for i in set(self.encoded_labels)]
+
+        # each data point we want to predict on needs an array that is of the same length as the
+        # number of classes they can be classified into
+        predictions = [models.copy() for x in X]
+
+        # for each class test each point
+        for class in set(self.encoded_labels):
+            # save the models
+            models[class] = sp.stats.gamma(self.params[class][0], self.params[class][1])
+            for index, x in enumerate(X):
+                # calculate distances and shift into gamma's support
+                dist = closest_linear(x, self.input_data[self.encoded_labels == class])
+                adj_dist = dist - self.params[class][2] + ε
+
+                # calculate the inverse cdf
+                # if the adjusted isn't above zero, it is closer to a member of said class than
+                # any other point
+                predictions[index][class] = 1-models[class].cdf(adj_dist) if adj_dist > 0 else 1
+
+        if p-value:
+            return predictions
+        prediction = np.argmax(predictions, axis = 1)
+        return prediction
+
+
+
+
+
+
+
+
+    #only here so that i can scroll down while coding

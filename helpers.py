@@ -37,7 +37,6 @@ def gamma_mle(data: np.ndarray, iterations: int = 4):
         digamma = sp.special.digamma(k)
         digamma_prime = sp.special.polygamma(1, k)
         k = 1/ (1/k + (x[1] - x[0] + np.log(k) - digamma)/(k**2*(1/k - digamma_prime)))
-        ##print("itermidiary step:", k)
 
     alpha[0] = k
     alpha[1] = np.exp(x[0])/alphas[0]
