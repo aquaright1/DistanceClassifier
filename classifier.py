@@ -72,9 +72,18 @@ class NNClassifier():
                 # any other point
                 predictions[index][class] = 1-models[class].cdf(adj_dist) if adj_dist > 0 else 1
 
+        predictions = np.asarray(predictions)
         if p-value:
             return predictions
         prediction = np.argmax(predictions, axis = 1)
+        '''
+        TODO: parallized this following code:
+        '''
+        for index, individual in enumerate(predictions):
+            if individual[prediction[index]] < self.threshold:
+                prediction[index] = -1
+
+
         return prediction
 
 
