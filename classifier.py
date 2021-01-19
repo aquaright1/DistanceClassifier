@@ -78,6 +78,7 @@ class NNClassifier():
         prediction = np.argmax(predictions, axis = 1)
         '''
         TODO: parallized this following code:
+        
         '''
         for index, individual in enumerate(predictions):
             if individual[prediction[index]] < self.threshold:
