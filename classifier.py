@@ -6,7 +6,7 @@ import scipy as sp
 import numpy as np
 
 class NNClassifier():
-    def __init__(self, ε = 0.0001, threshold = .01):
+    def __init__(self, ε : float = 0.0001, threshold : float= .01):
         """
         :param ε: float
         :param threshold: float
@@ -32,10 +32,13 @@ class NNClassifier():
         # search for the minimum distance to points of the same class
         for index, data in enumerate(self.input_data):
             label = self.encoded_labels[index] #y index
+            # print(self.encoder.inverse_transform([label]))
+            try:
+                closest = closest_linear(data, self.input_data[self.encoded_labels == label], fit = True) #point, label
 
-            closest = closest_linear(data, self.input_data[self.encoded_labels == label], fit = True) #point, label
-
-            self.distances[label] = closest
+                self.distances[label] = closest
+            except Exception as e:
+                print(f"class: {self.encoder.inverse_transform([label])} only has one value, as such single point will not be used in classification")
 
         for key in self.distances.keys():
             # take the log of the minimum distances
@@ -84,7 +87,7 @@ class NNClassifier():
         prediction = np.argmax(predictions, axis = 1)
         '''
         TODO: parallized this following code:
-        
+
         '''
         for index, individual in enumerate(predictions):
             if individual[prediction[index]] < self.threshold:
@@ -93,7 +96,8 @@ class NNClassifier():
 
         return prediction
 
-
+    def get_classes(self):
+        return self.encoder.classes_ if self.encoder != None else None
 
 
 
