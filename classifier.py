@@ -99,6 +99,12 @@ class NNClassifier():
     def get_classes(self):
         return self.encoder.classes_ if self.encoder != None else None
 
+    def get_distances(self, class = "none"):
+        return self.distances if class == 'none' else self.distances[class]
+
+    def get_params(self):
+        return self.params[:, 0:2]
+
 
 
 
