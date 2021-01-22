@@ -105,6 +105,8 @@ class NNClassifier():
     def get_params(self):
         return self.params[:, 0:2]
 
+    def get_encoder(self):
+        return self.encoder
 
 
 
