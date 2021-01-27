@@ -27,22 +27,25 @@ class NNClassifier():
 
         # initiate the parameters and the minimum distances
         self.params = np.zeros((len(self.encoder.classes_), 3))
-        self.distances = defaultdict(lambda: list)
+        self.distances = defaultdict(list)
 
         # search for the minimum distance to points of the same class
         for index, data in enumerate(self.input_data):
             label = self.encoded_labels[index] #y index
             # print(self.encoder.inverse_transform([label]))
             try:
+                if len(self.input_data[self.encoded_labels == label]) == 2:
+                    raise ValueError
                 closest = closest_linear(data, self.input_data[self.encoded_labels == label], fit = True) #point, label
 
-                self.distances[label] = closest
+                self.distances[label].append(closest)
             except Exception as e:
                 print(f"class: {self.encoder.inverse_transform([label])} only has one value, as such single point will not be used in classification")
 
         for key in self.distances.keys():
             # take the log of the minimum distances
             self.distances[key] = np.log(np.asarray(self.distances[key]))
+
 
             # move data points into support of gamma distribution and save the movement
             minimum = np.min(self.distances[key])
@@ -99,8 +102,8 @@ class NNClassifier():
     def get_classes(self):
         return self.encoder.classes_ if self.encoder != None else None
 
-    def get_distances(self, class = "none"):
-        return self.distances if class == 'none' else self.distances[class]
+    def get_distances(self, classes = "none"):
+        return self.distances if classes == 'none' else self.distances[classes]
 
     def get_params(self):
         return self.params[:, 0:2]

@@ -3,6 +3,7 @@ import scipy as sp
 import numpy as np
 
 
+
 def closest_linear(point: np.ndarray, data: np.ndarray, fit: bool = False) -> float:
     '''
     point: the point to find nearest neighbor distance to, as a numpy array of features (coordinates in feature space)
@@ -25,11 +26,17 @@ def gamma_mle(data: np.ndarray, iterations: int = 4):
     '''
     #using Gamma(shape,scale) not Gamma(shape, rate)
     alpha = [0,0] # 0 is k, 1 is theta
-    x = np.asarray([0,0]) #0 is np.log(np.mean(x)) 1 is np.mean(np.log(x))
+    x = [0,0] #0 is np.log(np.mean(x)) 1 is np.mean(np.log(x))
 
+    # print(x[0])
     x[0] = np.log(np.mean(data))
+    # print(np.log(np.mean(data)))
     x[1] = np.mean(np.log(data))
 
+    # print(np.mean(data), np.log(data))
+    print(len(data))
+    if x[0] == x[1]:
+        print(f"error, {x[0], x[1], data}")
     alpha[0]= .5/(x[0] - x[1])
 
     k = alpha[0]
