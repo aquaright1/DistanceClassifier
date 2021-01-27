@@ -16,9 +16,23 @@ def graph(model):
     params = model.get_params()
     distances = model.get_distances()
 
-    print('params:', params)
-    print()
-    print('distances:', distances)
+    # TODO: make subplots
+
+    for c, dists in distances.items():
+        dist_params = params[c]
+
+        dists = np.sort(dists)
+        empirical_pdf = dists / dists.size
+        gamma_cdf = get_emp_p(dists, dist_params[0], dist_params[1])
+
+        plt.title(f'Class {c}')
+
+        plt.plot(dists, gamma_cdf, label='Gamma CDF')
+        plt.plot(dists, empirical_pdf.cumsum(), label='Empirical CDF')
+        plt.legend()
+
+        plt.savefig(f'graphs/class_{c}.png')
+        plt.show()
 
 if __name__ == '__main__':
     # this code may or not be mostly stolen from `testing.py`
