@@ -12,6 +12,9 @@ def get_emp_p(array, k: float, theta: float):
     dist = sp.stats.gamma(theta, scale = k)
     return dist.cdf(array)
 
+def gen_gamma_pdf(x, a, d, p):
+    return (p/(a**d))* (x **(d-1)) * np.exp( -( (x/a)**p)) / special.gamma(d/p)
+
 def graph(model):
     params = model.get_params()
     distances = model.get_distances()
@@ -23,16 +26,35 @@ def graph(model):
 
         dists = np.sort(dists)
         empirical_pdf = dists / dists.size
-        gamma_cdf = get_emp_p(dists, dist_params[0], dist_params[1])
+        gamma_cdf = 1 - get_emp_p(dists, dist_params[0], dist_params[1])
 
-        plt.title(f'Class {c}')
+        fig = plt.figure()
+        ax = fig.add_subplot(221)
+        plt.title(f'Class {c} Size: {dists.size}')
 
         plt.plot(dists, gamma_cdf, label='Gamma CDF')
-        plt.plot(dists, empirical_pdf.cumsum(), label='Empirical CDF')
+        plt.plot(dists, 1 - empirical_pdf.cumsum(), label='Empirical CDF')
+        plt.yscale('log')
         plt.legend()
 
-        plt.savefig(f'graphs/class_{c}.png')
+        ax1 = fig.add_subplot(222)
+        ax1.plot(gamma_cdf, 1 - empirical_pdf.cumsum(), label = "Comparison")
+        ax1.plot([0,1],[0,1], label = "y = x")
+        ax1.set_yscale('log')
+        ax1.set_xscale('log')
+
+        ax3 = fig.add_subplot(223)
+        n, bins, patches = ax3.hist(dists)
+        ax3.set_yscale('linear')
+        ax3.set_xscale('linear')
+        x = np.linspace(0, bins[-1], 200)
+        ax3.plot(x, sp.stats.gamma.pdf(x, dist_params[0], scale = dist_params[1])*dists.size)
+
+
+        plt.savefig(f'graphs/class {c}.png')
+        plt.legend()
         plt.show()
+
 
 if __name__ == '__main__':
     # this code may or not be mostly stolen from `testing.py`

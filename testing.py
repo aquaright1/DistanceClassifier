@@ -2,20 +2,26 @@ import numpy as np
 import classifier
 import sklearn.model_selection
 import matplotlib.pyplot as plt
+import sys
+np.set_printoptions(threshold=sys.maxsize)
 
-data= np.genfromtxt('my_datasets/abalone.data', delimiter=",")
+
+def test(X, y):
+    xTrain, xTest, yTrain, yTest = sklearn.model_selection.train_test_split(X,y)
+
+    model = classifier.NNClassifier()
+    model.fit(xTrain, yTrain)
+
+    predictions = model.predict(xTest)
+    print(predictions)
+    print(yTest)
+
+
+data= np.genfromtxt('bezdekIris.data', delimiter=",")
+data1 = np.genfromtxt('bezdekIris.data', delimiter=",", dtype = "S")
 
 #add preprocessing function
-x = data[:, 1:-1]
-y = data[:, -1]
+x = np.asarray([input[:-1] for input in data])
+y = np.asarray([input[-1] for input in data1])
 
-xTrain, xTest, yTrain, yTest = sklearn.model_selection.train_test_split(x,y)
-
-model = classifier.NNClassifier()
-model.fit(xTrain, yTrain)
-print(yTest.shape)
-predictions = model.predict(xTest)
-print(predictions.shape)
-
-plt.plot(predictions, yTest)
-plt.show()
+test(x,y)
