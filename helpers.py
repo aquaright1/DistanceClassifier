@@ -15,7 +15,9 @@ def closest_linear(point: np.ndarray, data: np.ndarray, fit: bool = False) -> fl
     square_diffs = (data - point)**2
 
     distances = np.sqrt(square_diffs.sum(axis=1))
-    return np.partition(distances, int(fit))[int(fit)]
+    if fit:
+        distances = distances[distances != 0]
+    return np.partition(distances, 0)[0]
 
 def gamma_mle(data: np.ndarray, iterations: int = 4):
     '''

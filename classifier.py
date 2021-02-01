@@ -37,7 +37,7 @@ class NNClassifier():
                 if len(self.input_data[self.encoded_labels == label]) == 2:
                     raise ValueError
                 closest = closest_linear(data, self.input_data[self.encoded_labels == label], fit = True) #point, label
-
+                # print(f'closest is: {closest}')
                 self.distances[label].append(closest)
             except Exception as e:
                 print(f"class: {self.encoder.inverse_transform([label])} only has one value, as such single point will not be used in classification")

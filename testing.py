@@ -14,7 +14,10 @@ def test(X, y):
 
     predictions = model.predict(xTest)
     print(predictions)
+    encoder = model.get_encoder()
+    yTest = encoder.transform(yTest)
     print(yTest)
+    print(predictions == yTest, sum(predictions == yTest), len(yTest))
 
 
 data= np.genfromtxt('bezdekIris.data', delimiter=",")

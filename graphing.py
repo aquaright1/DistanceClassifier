@@ -15,7 +15,7 @@ def get_emp_p(array, k: float, theta: float):
 def gen_gamma_pdf(x, a, d, p):
     return (p/(a**d))* (x **(d-1)) * np.exp( -( (x/a)**p)) / special.gamma(d/p)
 
-def graph(model):
+def graph(model, data = ''):
     params = model.get_params()
     distances = model.get_distances()
 
@@ -30,7 +30,7 @@ def graph(model):
 
         fig = plt.figure()
         ax = fig.add_subplot(221)
-        plt.title(f'Class {c} Size: {dists.size}')
+        plt.title(f'{data} Class {c} Size: {dists.size}')
 
         plt.plot(dists, gamma_cdf, label='Gamma CDF')
         plt.plot(dists, 1 - empirical_pdf.cumsum(), label='Empirical CDF')
@@ -51,18 +51,25 @@ def graph(model):
         ax3.plot(x, sp.stats.gamma.pdf(x, dist_params[0], scale = dist_params[1])*dists.size)
 
 
-        plt.savefig(f'graphs/class {c}.png')
+        plt.savefig(f'graphs/{data} class {c}.png')
         plt.legend()
         plt.show()
 
 
 if __name__ == '__main__':
-    # this code may or not be mostly stolen from `testing.py`
-    data= np.genfromtxt('abalone.data', delimiter=",")
+    # # this code may or not be mostly stolen from `testing.py`
+    # data= np.genfromtxt('bezdekIris.data', delimiter=",")
+    #
+    # #add preprocessing function
+    # x = data[:, 1:-1]
+    # y = data[:, -1]
+
+    data= np.genfromtxt('bezdekIris.data', delimiter=",")
+    data1 = np.genfromtxt('bezdekIris.data', delimiter=",", dtype = "S")
 
     #add preprocessing function
-    x = data[:, 1:-1]
-    y = data[:, -1]
+    x = np.asarray([input[:-1] for input in data])
+    y = np.asarray([input[-1] for input in data1])
 
     model = classifier.NNClassifier()
     model.fit(x, y)
