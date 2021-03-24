@@ -1,7 +1,8 @@
 ### Classifier ###
 from sklearn.preprocessing import LabelEncoder
-from helpers import closest_linear, gamma_mle
+from helpers import gamma_mle
 from collections import defaultdict
+from nearest_neighbors import LinearNNSearch # TODO: integrate nearest neighbor search code w/ classifier
 import scipy as sp
 import numpy as np
 
@@ -36,7 +37,8 @@ class NNClassifier():
             try:
                 if len(self.input_data[self.encoded_labels == label]) == 2:
                     raise ValueError
-                closest = closest_linear(data, self.input_data[self.encoded_labels == label], fit = True) #point, label
+                nn_search = LinearNNSearch(data, fit=True)
+                closest = nn_search.nn_distance(self.input_data[self.encoded_labels == label]) #point, label
                 # print(f'closest is: {closest}')
                 self.distances[label].append(closest)
             except Exception as e:
@@ -76,7 +78,8 @@ class NNClassifier():
             models[each_class] = sp.stats.gamma(self.params[each_class][0], self.params[each_class][1])
             for index, x in enumerate(X):
                 # calculate distances and shift into gamma's support
-                dist = closest_linear(x, self.input_data[self.encoded_labels == each_class])
+                nn_search = LinearNNSearch(x)
+                dist = nn_search.nn_distance(self.input_data[self.encoded_labels == each_class])
                 adj_dist = dist - self.params[each_class][2] + self.ε
 
                 # calculate the inverse cdf
