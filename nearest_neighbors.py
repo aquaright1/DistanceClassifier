@@ -1,3 +1,6 @@
+import time
+import random
+
 import numpy as np
 from sklearn.neighbors import KDTree, BallTree
 
@@ -52,34 +55,53 @@ class NearestNeighborMethod:
 
 
 if __name__ == '__main__':
-    # sanity check
-    data = np.array([
-        [1, 4, 3],
-        [5, 3, 4],
-        [2, 2, 6],
-        [1, 3, 3],
-        [6, 4, 1]
-    ])
+    # sanity check & benchmarking
+    n_pts = 1000000
+    n_queries = 1000
+    n_features = 20
 
-    point_fit = data[0, :]
-    point = np.array([2, 5, 1])
+    print(f'Benchmarking NNS for {n_pts} training points, {n_features} features, & {n_queries} queries')
+    print()
 
-    linear_fit = LinearNNSearch(data, fit=True)
+    data = np.random.rand(n_pts, n_features) # 10k points with 10 features
+    points = np.random.rand(n_queries, n_features) # one random test point
+
+    print('Linear Search')
+
+    start = time.monotonic()
     linear = LinearNNSearch(data)
 
-    print(linear_fit.nn_distance(point_fit))
-    print(linear.nn_distance(point))
+    for point in points:
+        _ = linear.nn_distance(point)
+
+    end = time.monotonic()
+
+    print(f'time elapsed: {end - start} seconds')
     print()
 
-    kd_tree_fit = TreeNNSearch.kd_tree(data, fit=True)
+
+    print('KD Tree')
+
+    start = time.monotonic()
     kd_tree = TreeNNSearch.kd_tree(data)
 
-    print(kd_tree_fit.nn_distance(point_fit))
-    print(kd_tree.nn_distance(point))
+    for point in points:
+        nnd = kd_tree.nn_distance(point)
+
+    end = time.monotonic()
+
+    print(f'time elapsed: {end - start} seconds')
     print()
 
-    ball_tree_fit = TreeNNSearch.ball_tree(data, fit=True)
+
+    print('Ball Tree')
+
+    start = time.monotonic()
     ball_tree = TreeNNSearch.ball_tree(data)
 
-    print(ball_tree_fit.nn_distance(point_fit))
-    print(ball_tree.nn_distance(point))
+    for point in points:
+        nnd = ball_tree.nn_distance(point)
+
+    end = time.monotonic()
+
+    print(f'time elapsed: {end - start} seconds')
