@@ -1,1 +1,3 @@
-Distance Classifier
+# Distance Classifier
+
+Currently, there are no algorithms that can accurately classify any given point as "none of the above" with a confidence value. We see many in other non- computational fields running classifiers that incorrectly classify something as a class when in reality it is "none of the above". An example of this would be given a classifier that can classify dogs and cats, but is given a car. This classifier will incorrectly classify the car as either a dog or a cat when in reality, it is "None of the above". We are currently developing this algorithm to be able to classify something accurately and output a P-value along with it.
