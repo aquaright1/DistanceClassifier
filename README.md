@@ -4,4 +4,6 @@ We see many in other non-computational fields running classifiers that incorrect
 
 There are no current algorithms that can accurately classify data as "none of the above", and output a rigorous confidence value. Neural Nets are specifically hard to get something rigorous form; if you look at the mathematics of how the final number pops out, it’s a weighted sum of edge weights. It would be difficult to get a number like 1e-9 out of a process like that, and The final output numbers typically are nowhere near that small. With this dilemma, we are developing an algorithm that can classify accurately as well as produce a rigorous P-value.
 
+This is fork is a continuation of Tim's work
+
 
